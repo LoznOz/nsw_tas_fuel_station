@@ -180,6 +180,8 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 
 Currently the cheapest sensors only offer E10/U91.
 
+Add a comment to [this issue](https://github.com/bicycleboy/nsw_tas_fuel_station/issues/13) to upvote for this to be implemented!
+
 #### Resolution (Advanced)
 
 1. This is a workaround which requires comfort with editing configuration.yaml.  Unlike the E10/U91 cheapest sensors which use the API to find the cheapest stations by location as reported to NSW Fuel Check/FuelCheck - TAS, this solution only ever compares the stations you configure.
