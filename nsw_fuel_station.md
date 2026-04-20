@@ -180,7 +180,7 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 
 Currently the cheapest sensors only offer E10/U91.
 
-Add a comment to [this issue](https://github.com/bicycleboy/nsw_tas_fuel_station/issues/13) to upvote for this to be implemented!
+Add a comment to [this issue](https://github.com/bicycleboy/nsw_tas_fuel_station/issues/13) to upvote for cheapest sensors for all fuel types!
 
 #### Resolution (Advanced)
 
