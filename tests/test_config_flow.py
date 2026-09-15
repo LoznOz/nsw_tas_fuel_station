@@ -18,7 +18,7 @@ from custom_components.nsw_tas_fuel_station.const import (
     CONF_FUEL_TYPE,
     CONF_LOCATION,
     CONF_NICKNAME,
-    CONF_RADIUS,
+    CONF_RADIUS_M,
     CONF_SELECTED_STATIONS,
     DEFAULT_NICKNAME,
     DOMAIN,
@@ -245,7 +245,7 @@ async def test_successful_reconfigure_flow(
                 CONF_LOCATION: {
                     "latitude": HOME_LAT,
                     "longitude": HOME_LNG,
-                    CONF_RADIUS: radius_meters,
+                    CONF_RADIUS_M: radius_meters,
                 },
                 CONF_FUEL_TYPE: fuel or "E10-U91",
             },
