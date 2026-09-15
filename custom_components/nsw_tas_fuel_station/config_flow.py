@@ -228,8 +228,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 CONF_STATION_CODE: code,
                 CONF_AU_STATE: self._station_lookup[code][CONF_AU_STATE],
-                CONF_NICKNAME: self._station_lookup[code][CONF_NICKNAME],
-                CONF_FUEL_TYPE: self._station_lookup[code][CONF_FUEL_TYPE],
+                "station_name": self._station_lookup[code]["station_name"],
+                "fuel_types": self._station_lookup[code]["fuel_types"],
             }
             for code in selected_stations
         ]
@@ -246,9 +246,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._flow_data.get(CONF_LOCATION),
                     stations_config_entry,
                     self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM),
-                    self._flow_data.get(
-                        CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
-                    ),
+                    self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
                 )
                 self.hass.config_entries.async_update_entry(
                     self._config_entry, data=new_config_entry
@@ -314,7 +312,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_advanced_options(user_input)
 
-
     async def _create_new_config_entry(
         self, nickname: str, selected_stations: list[int]
     ) -> ConfigFlowResult:
@@ -330,8 +327,12 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             "nicknames": {
                 nickname: {
                     CONF_LOCATION: self._flow_data.get(CONF_LOCATION),
-                    CONF_RADIUS_KM: self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM),
-                    CONF_EXCLUDE_STRING: self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
+                    CONF_RADIUS_KM: self._flow_data.get(
+                        CONF_RADIUS_KM, DEFAULT_RADIUS_KM
+                    ),
+                    CONF_EXCLUDE_STRING: self._flow_data.get(
+                        CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
+                    ),
                     "stations": [
                         {
                             CONF_STATION_CODE: code,
@@ -467,7 +468,9 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_AU_STATE: au_state,
                 CONF_FUEL_TYPE: fuel_type,
                 CONF_RADIUS_KM: radius_km,
-                CONF_EXCLUDE_STRING: user_input.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
+                CONF_EXCLUDE_STRING: user_input.get(
+                    CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
+                ),
             }
         )
 
