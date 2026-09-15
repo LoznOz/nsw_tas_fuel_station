@@ -20,9 +20,10 @@
         "data": {
           "fuel_type": "To search for a station with a specific fuel, select from the dropdown.",
           "location": "Select a location",
-          "nickname": "Location nickname"
+          "nickname": "Location nickname",
+          "exclude_string": "Enter a string to exclude stations from the cheapest sensors, e.g. \"Members only\" Leave blank for all stations."
         },
-        "description": "Accept the \"Home\" location nickname or choose a new name such as \"Work\" to group fuel stations by location.\n\nYou can create multiple locations by using \"Reconfigure\" on the integration page and choosing a new nickname here. To add stations to an existing nickname/location, just enter the nickname. To create a trip e.g. \"Trip to work\" use the same nickname and multiple locations.",
+        "description": "Accept the \"Home\" location nickname or choose a new name such as \"Work\" to group fuel stations by location.\n\nYou can create multiple locations by using \"Reconfigure\" on the integration page and choosing a new nickname here. To add stations to an existing nickname/location, just enter the nickname. To create a trip e.g. \"Trip to work\" use the same nickname and multiple locations. To add a fuel type to existing stations, select the fuel here and the station on the next screen.",
         "title": "Advanced Selection"
       },
       "station_select": {

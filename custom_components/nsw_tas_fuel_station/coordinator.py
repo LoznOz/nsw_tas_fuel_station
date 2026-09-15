@@ -18,6 +18,15 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import (
     CHEAPEST_RESULTS_LIMIT,
+    CONF_AU_STATE,
+    CONF_EXCLUDE_STRING,
+    CONF_FUEL_TYPE,
+    CONF_LATITUDE,
+    CONF_LOCATION,
+    CONF_LONGITUDE,
+    CONF_RADIUS_KM,
+    CONF_STATION_CODE,
+    CONF_STATION_NAME,
     DEFAULT_FUEL_TYPE,
     DEFAULT_FUEL_TYPE_NON_E10,
     DEFAULT_RADIUS_KM,
@@ -60,24 +69,27 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
         self._station_keys: set[StationKey] = set()
         for nickname_data in nicknames.values():
             for station in nickname_data.get("stations", []):
-                self._station_keys.add((station["station_code"], station["au_state"]))
+                self._station_keys.add(
+                    (station[CONF_STATION_CODE], station[CONF_AU_STATE])
+                )
 
         # Build a lookup for nickname, lat, lon, state for cheapest fuel queries
         self._cheapest_lookup: dict[str, dict[str, Any]] = {}
         for nickname, nickname_data in nicknames.items():
-            location = nickname_data.get("location", {})
-            lat = location.get("latitude")
-            lon = location.get("longitude")
-            radius_km = nickname_data.get("radius_km", DEFAULT_RADIUS_KM)
+            location = nickname_data.get(CONF_LOCATION, {})
+            lat = location.get(CONF_LATITUDE)
+            lon = location.get(CONF_LONGITUDE)
+            radius_km = nickname_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
 
             stations = nickname_data.get("stations", [])
-            au_state = stations[0]["au_state"] if stations else None
-
+            au_state = stations[0][CONF_AU_STATE] if stations else None
+            exclude_string = nickname_data.get(CONF_EXCLUDE_STRING, "")
             self._cheapest_lookup[nickname] = {
-                "lat": lat,
-                "lon": lon,
-                "au_state": au_state,
-                "radius_km": radius_km,
+                CONF_LATITUDE: lat,
+                CONF_LONGITUDE: lon,
+                CONF_AU_STATE: au_state,
+                CONF_RADIUS_KM: radius_km,
+                CONF_EXCLUDE_STRING: exclude_string,
             }
 
     async def _async_update_data(self) -> CoordinatorData:
@@ -145,7 +157,7 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
                         "price": float,
                         "station_code": int,
                         "station_name": str,
-                        "au_state": str,
+                        CONF_AU_STATE: str,
                         "fuel_type": str,
                         "last_updated": str,
                     },
@@ -157,10 +169,11 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
         cheapest: dict[str, list[dict]] = {}
 
         for nickname, nickname_attr in self._cheapest_lookup.items():
-            lat = nickname_attr["lat"]
-            lon = nickname_attr["lon"]
-            au_state = nickname_attr["au_state"]
-            radius_km = nickname_attr["radius_km"]
+            lat = nickname_attr[CONF_LATITUDE]
+            lon = nickname_attr[CONF_LONGITUDE]
+            au_state = nickname_attr[CONF_AU_STATE]
+            radius_km = nickname_attr[CONF_RADIUS_KM]
+            exclude_string = nickname_attr[CONF_EXCLUDE_STRING]
 
             if lat is None or lon is None:
                 _LOGGER.warning("Nickname '%s' missing lat/lon, skipping", nickname)
@@ -189,17 +202,19 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
                 if existing is None or sp.price.price < existing.price.price:
                     cheapest_per_station[code] = sp
 
-            # Convert only the winners
+            # Convert only the winners, excluding any stations matching the exclude string
             combined: list[dict] = [
                 {
                     "price": sp.price.price,
-                    "station_code": sp.station.code,
-                    "station_name": sp.station.name,
-                    "au_state": sp.station.au_state,
-                    "fuel_type": sp.price.fuel_type,
+                    CONF_STATION_CODE: sp.station.code,
+                    CONF_STATION_NAME: sp.station.name,
+                    CONF_AU_STATE: sp.station.au_state,
+                    CONF_FUEL_TYPE: sp.price.fuel_type,
                     "last_updated": sp.price.last_updated,
                 }
                 for sp in cheapest_per_station.values()
+                if not exclude_string
+                or exclude_string.lower() not in sp.station.name.lower()
             ]
 
             combined.sort(key=lambda x: x["price"])
