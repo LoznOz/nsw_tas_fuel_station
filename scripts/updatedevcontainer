@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HOST="magpie.local"
+HOST="magpie"
 ROOT_DIR="$HOME/code/ha"
 CONTAINER_DIR="$ROOT_DIR/ha-custom"
 INT_DIR="$ROOT_DIR/nsw_tas_fuel_station"
