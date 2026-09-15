@@ -11,7 +11,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, PRICE_UNIT
+from .const import CONF_AU_STATE, CONF_FUEL_TYPE, CONF_STATION_CODE, CONF_STATION_NAME, DOMAIN, PRICE_UNIT
 from .coordinator import NSWFuelCoordinator
 
 if TYPE_CHECKING:
@@ -197,10 +197,10 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
         station_price = pd[self._index]
 
         return {
-            "station_code": station_price["station_code"],
-            "station_name": station_price["station_name"],
+            CONF_STATION_CODE: station_price[CONF_STATION_CODE],
+            CONF_STATION_NAME: station_price[CONF_STATION_NAME],
             "rank": self._rank,
-            "fuel_type": station_price["fuel_type"],
+            CONF_FUEL_TYPE: station_price[CONF_FUEL_TYPE],
             "price": station_price["price"],
             "price_last_changed": station_price.get("last_updated"),
             "price_last_checked": datetime.now().strftime("%d %b %H:%M"),
@@ -216,10 +216,10 @@ def create_favorite_station_sensors(
 
     for nickname, nickname_data in nicknames.items():
         for station in nickname_data.get("stations", []):
-            station_code = station["station_code"]
-            au_state = station["au_state"]
-            station_name = station["station_name"]
-            fuel_types = station.get("fuel_types", [])
+            station_code = station[CONF_STATION_CODE]
+            au_state = station[CONF_AU_STATE]
+            station_name = station[CONF_STATION_NAME]
+            fuel_types = station.get(CONF_FUEL_TYPE, [])
 
             if not fuel_types:
                 _LOGGER.warning(
@@ -268,7 +268,7 @@ def create_cheapest_fuel_sensors(
             au_state = None
             if len(entries) >= rank:
                 entry = entries[rank - 1]
-                au_state = entry.get("au_state")
+                au_state = entry.get(CONF_AU_STATE)
 
             sensors.append(
                 CheapestFuelPriceSensor(
