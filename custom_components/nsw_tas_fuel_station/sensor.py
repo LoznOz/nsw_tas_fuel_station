@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_AU_STATE,
@@ -210,7 +210,7 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
             "fuel_type": station_price["fuel_type"],
             "price": station_price["price"],
             "price_last_changed": station_price.get("last_updated"),
-            "price_last_checked": datetime.now().strftime("%d %b %H:%M"),
+            "price_last_checked": dt_util.now().strftime("%d %b %H:%M"),
         }
 
 

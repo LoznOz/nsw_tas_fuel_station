@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.nsw_tas_fuel_station.const import DOMAIN
 from custom_components.nsw_tas_fuel_station.coordinator import NSWFuelCoordinator
@@ -18,8 +19,6 @@ from custom_components.nsw_tas_fuel_station.sensor import (
     create_cheapest_fuel_sensors,
     create_favorite_station_sensors,
 )
-
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
