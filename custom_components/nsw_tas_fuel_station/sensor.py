@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import logging
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
@@ -11,7 +11,14 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_AU_STATE, CONF_FUEL_TYPE, CONF_STATION_CODE, CONF_STATION_NAME, DOMAIN, PRICE_UNIT
+from .const import (
+    CONF_AU_STATE,
+    CONF_FUEL_TYPES,
+    CONF_STATION_CODE,
+    CONF_STATION_NAME,
+    DOMAIN,
+    PRICE_UNIT,
+)
 from .coordinator import NSWFuelCoordinator
 
 if TYPE_CHECKING:
@@ -200,7 +207,7 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
             CONF_STATION_CODE: station_price[CONF_STATION_CODE],
             CONF_STATION_NAME: station_price[CONF_STATION_NAME],
             "rank": self._rank,
-            CONF_FUEL_TYPE: station_price[CONF_FUEL_TYPE],
+            "fuel_type": station_price["fuel_type"],
             "price": station_price["price"],
             "price_last_changed": station_price.get("last_updated"),
             "price_last_checked": datetime.now().strftime("%d %b %H:%M"),
@@ -219,7 +226,7 @@ def create_favorite_station_sensors(
             station_code = station[CONF_STATION_CODE]
             au_state = station[CONF_AU_STATE]
             station_name = station[CONF_STATION_NAME]
-            fuel_types = station.get(CONF_FUEL_TYPE, [])
+            fuel_types = station.get(CONF_FUEL_TYPES, [])
 
             if not fuel_types:
                 _LOGGER.warning(

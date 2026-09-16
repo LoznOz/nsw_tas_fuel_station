@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from nsw_tas_fuel import (
     NSWFuelApiClient,
     NSWFuelApiClientAuthError,
@@ -13,14 +15,10 @@ from nsw_tas_fuel import (
     StationPrice,
 )
 
-from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-
 from .const import (
     CHEAPEST_RESULTS_LIMIT,
     CONF_AU_STATE,
     CONF_EXCLUDE_STRING,
-    CONF_FUEL_TYPE,
     CONF_LATITUDE,
     CONF_LOCATION,
     CONF_LONGITUDE,
@@ -209,7 +207,7 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
                     CONF_STATION_CODE: sp.station.code,
                     CONF_STATION_NAME: sp.station.name,
                     CONF_AU_STATE: sp.station.au_state,
-                    CONF_FUEL_TYPE: sp.price.fuel_type,
+                    "fuel_type": sp.price.fuel_type,
                     "last_updated": sp.price.last_updated,
                 }
                 for sp in cheapest_per_station.values()
