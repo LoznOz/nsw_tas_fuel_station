@@ -13,8 +13,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_AU_STATE,
-    CONF_STATION_FUEL_TYPES,
     CONF_STATION_CODE,
+    CONF_STATION_FUEL_TYPES,
     CONF_STATION_NAME,
     DOMAIN,
     PRICE_UNIT,
