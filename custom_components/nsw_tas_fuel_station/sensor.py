@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_AU_STATE,
-    CONF_FUEL_TYPES,
+    CONF_STATION_FUEL_TYPES,
     CONF_STATION_CODE,
     CONF_STATION_NAME,
     DOMAIN,
@@ -226,7 +226,7 @@ def create_favorite_station_sensors(
             station_code = station[CONF_STATION_CODE]
             au_state = station[CONF_AU_STATE]
             station_name = station[CONF_STATION_NAME]
-            fuel_types = station.get(CONF_FUEL_TYPES, [])
+            fuel_types = station.get(CONF_STATION_FUEL_TYPES, [])
 
             if not fuel_types:
                 _LOGGER.warning(
