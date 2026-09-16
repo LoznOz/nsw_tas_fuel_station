@@ -2,27 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import copy
 import logging
 import math
 import re
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Self, cast
 
-from nsw_tas_fuel import (
-    NSWFuelApiClient,
-    NSWFuelApiClientAuthError,
-    NSWFuelApiClientError,
-)
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, UnitOfLength
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.util.unit_conversion import DistanceConverter
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
     LocationSelector,
     LocationSelectorConfig,
@@ -34,6 +27,12 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+from homeassistant.util.unit_conversion import DistanceConverter
+from nsw_tas_fuel import (
+    NSWFuelApiClient,
+    NSWFuelApiClientAuthError,
+    NSWFuelApiClientError,
+)
 
 from .const import (
     ALL_FUEL_TYPES,
@@ -44,8 +43,8 @@ from .const import (
     CONF_LOCATION,
     CONF_LONGITUDE,
     CONF_NICKNAME,
-    CONF_RADIUS_M,
     CONF_RADIUS_KM,
+    CONF_RADIUS_M,
     CONF_SELECTED_STATIONS,
     CONF_STATION_CODE,
     DEFAULT_EXCLUDE_STRING,
