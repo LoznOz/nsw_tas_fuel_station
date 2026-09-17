@@ -18,6 +18,7 @@ from nsw_tas_fuel import (
 from .const import (
     CHEAPEST_RESULTS_LIMIT,
     CONF_AU_STATE,
+    CONF_CHEAPEST_FUEL_TYPE,
     CONF_EXCLUDE_STRING,
     CONF_LATITUDE,
     CONF_LOCATION,
@@ -82,11 +83,15 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
             stations = nickname_data.get("stations", [])
             au_state = stations[0][CONF_AU_STATE] if stations else None
             exclude_string = nickname_data.get(CONF_EXCLUDE_STRING, "")
+            cheapest_fuel_type = nickname_data.get(
+                CONF_CHEAPEST_FUEL_TYPE
+            ) or state_default_fuel(au_state)
             self._cheapest_lookup[nickname] = {
                 CONF_LATITUDE: lat,
                 CONF_LONGITUDE: lon,
                 CONF_AU_STATE: au_state,
                 CONF_RADIUS_KM: radius_km,
+                CONF_CHEAPEST_FUEL_TYPE: cheapest_fuel_type,
                 CONF_EXCLUDE_STRING: exclude_string,
             }
 
@@ -169,15 +174,13 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
         for nickname, nickname_attr in self._cheapest_lookup.items():
             lat = nickname_attr[CONF_LATITUDE]
             lon = nickname_attr[CONF_LONGITUDE]
-            au_state = nickname_attr[CONF_AU_STATE]
             radius_km = nickname_attr[CONF_RADIUS_KM]
+            fuel_type = nickname_attr[CONF_CHEAPEST_FUEL_TYPE]
             exclude_string = nickname_attr[CONF_EXCLUDE_STRING]
 
             if lat is None or lon is None:
                 _LOGGER.warning("Nickname '%s' missing lat/lon, skipping", nickname)
                 continue
-
-            fuel_type = state_default_fuel(au_state)
 
             nearby = await self.api.get_fuel_prices_within_radius(
                 latitude=lat,
@@ -234,11 +237,18 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
         """Return list of configured nicknames."""
         return list(self._cheapest_lookup.keys())
 
+    def get_nickname_cheapest_fuel_type(self, nickname: str) -> str:
+        """Return the string used to search for cheapest fuel type for a nickname."""
+        return self._cheapest_lookup[nickname][CONF_CHEAPEST_FUEL_TYPE]
+
 
 def state_default_fuel(
     au_state: str | None,
 ) -> str:
-    """Extract default fuel type based on Australian state."""
+    """Extract default fuel type based on Australian state.
+
+    Probably can be removed if we assume there are no users
+    of earlier versions with no cheapest fuel type in their config entry data."""
 
     if not au_state or au_state not in E10_AVAILABLE_STATES:
         return DEFAULT_FUEL_TYPE_NON_E10

@@ -37,6 +37,7 @@ from nsw_tas_fuel import (
 from .const import (
     ALL_FUEL_TYPES,
     CONF_AU_STATE,
+    CONF_CHEAPEST_FUEL_TYPE,
     CONF_EXCLUDE_STRING,
     CONF_FUEL_TYPE,
     CONF_LATITUDE,
@@ -47,6 +48,8 @@ from .const import (
     CONF_RADIUS_M,
     CONF_SELECTED_STATIONS,
     CONF_STATION_CODE,
+    CONF_STATION_FUEL_TYPES,
+    CONF_STATION_NAME,
     DEFAULT_EXCLUDE_STRING,
     DEFAULT_FUEL_TYPE,
     DEFAULT_FUEL_TYPE_NON_E10,
@@ -227,8 +230,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 CONF_STATION_CODE: code,
                 CONF_AU_STATE: self._station_lookup[code][CONF_AU_STATE],
-                "station_name": self._station_lookup[code]["station_name"],
-                "fuel_types": self._station_lookup[code]["fuel_types"],
+                CONF_STATION_NAME: self._station_lookup[code][CONF_STATION_NAME],
+                CONF_STATION_FUEL_TYPES: self._station_lookup[code][CONF_STATION_FUEL_TYPES],
             }
             for code in selected_stations
         ]
@@ -245,6 +248,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._flow_data.get(CONF_LOCATION),
                     stations_config_entry,
                     self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM),
+                    self._flow_data.get(CONF_FUEL_TYPE),
                     self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
                 )
                 self.hass.config_entries.async_update_entry(
@@ -258,6 +262,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._flow_data.get(CONF_LOCATION),
                 stations_config_entry,
                 self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM),
+                self._flow_data.get(CONF_FUEL_TYPE),
                 self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
             )
             new_config_entry = _add_fuel_to_stations(
@@ -326,8 +331,11 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             "nicknames": {
                 nickname: {
                     CONF_LOCATION: self._flow_data.get(CONF_LOCATION),
-                    CONF_RADIUS_KM: self._flow_data.get(
-                        CONF_RADIUS_KM, DEFAULT_RADIUS_KM
+                    CONF_RADIUS_KM: self._flow_data.get(CONF_RADIUS_KM,
+                                                        DEFAULT_RADIUS_KM
+                    ),
+                    CONF_CHEAPEST_FUEL_TYPE: self._flow_data.get(CONF_FUEL_TYPE,
+                        state_default_fuel(self._flow_data.get(CONF_AU_STATE)),
                     ),
                     CONF_EXCLUDE_STRING: self._flow_data.get(
                         CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
@@ -336,8 +344,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         {
                             CONF_STATION_CODE: code,
                             CONF_AU_STATE: self._station_lookup[code][CONF_AU_STATE],
-                            "station_name": self._station_lookup[code]["station_name"],
-                            "fuel_types": self._station_lookup[code]["fuel_types"],
+                            CONF_STATION_NAME: self._station_lookup[code][CONF_STATION_NAME],
+                            CONF_STATION_FUEL_TYPES: self._station_lookup[code][CONF_STATION_FUEL_TYPES],
                         }
                         for code in selected_stations
                     ],
@@ -536,6 +544,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         selected_fuel = (
             user.get(CONF_FUEL_TYPE)
+            or existing_nickname.get(CONF_CHEAPEST_FUEL_TYPE)
             or self._flow_data.get(CONF_FUEL_TYPE)
             or suggested_fuel
         )
@@ -648,11 +657,11 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         "station_code": station_code,
                         "station_name": st.name,
                         "au_state": st.au_state,
-                        "fuel_types": [],
+                        CONF_STATION_FUEL_TYPES: [],
                     }
 
-                if fuel not in self._station_lookup[station_code]["fuel_types"]:
-                    self._station_lookup[station_code]["fuel_types"].append(fuel)
+                if fuel not in self._station_lookup[station_code][CONF_STATION_FUEL_TYPES]:
+                    self._station_lookup[station_code][CONF_STATION_FUEL_TYPES].append(fuel)
 
                 # Only keep the first StationPrice per station for display list
                 if station_code not in seen:
@@ -675,6 +684,7 @@ def _create_nickname_with_stations(
     location: dict[str, Any] | None,
     stations: list[dict[str, Any]],
     radius_km: int = DEFAULT_RADIUS_KM,
+    cheapest_fuel_type: str = DEFAULT_FUEL_TYPE,
     exclude_string: str = DEFAULT_EXCLUDE_STRING,
 ) -> dict[str, Any]:
     """Create a new nickname config entry block with stations and fuel."""
@@ -686,15 +696,16 @@ def _create_nickname_with_stations(
         raise ValueError("Nickname already exists")
 
     nicknames[nickname] = {
-        "location": location,
-        "radius_km": radius_km,
-        "exclude_string": exclude_string,
+        CONF_LOCATION: location,
+        CONF_RADIUS_KM: radius_km,
+        CONF_CHEAPEST_FUEL_TYPE: cheapest_fuel_type,
+        CONF_EXCLUDE_STRING: exclude_string,
         "stations": [
             {
-                "station_code": s["station_code"],
-                "station_name": s["station_name"],
-                "au_state": s["au_state"],
-                "fuel_types": s["fuel_types"],
+                CONF_STATION_CODE: s[CONF_STATION_CODE],
+                CONF_STATION_NAME: s[CONF_STATION_NAME],
+                CONF_AU_STATE: s[CONF_AU_STATE],
+                CONF_STATION_FUEL_TYPES: s[CONF_STATION_FUEL_TYPES],
             }
             for s in stations
         ],
@@ -710,9 +721,11 @@ def _add_stations_to_nickname(
     location: dict[str, Any] | None,
     stations: list[dict[str, Any]],
     radius_km: int | None = None,
+    cheapest_fuel_type: str | None = None,
     exclude_string: str | None = None,
+
 ) -> dict[str, Any]:
-    """Add stations to an existing nickname."""
+    """Add stations to an existing nickname. Update location etc if changed."""
 
     new_entry = dict(entry)
     nicknames = dict(new_entry.get("nicknames", {}))
@@ -724,30 +737,33 @@ def _add_stations_to_nickname(
     existing_stations = list(nickname_block.get("stations", []))
 
     existing_station_index = {
-        (st["station_code"], st["au_state"]): st for st in existing_stations
+        (st[CONF_STATION_CODE], st[CONF_AU_STATE]): st for st in existing_stations
     }
 
     for station in stations:
-        key = (station["station_code"], station["au_state"])
+        key = (station[CONF_STATION_CODE], station[CONF_AU_STATE])
 
         if key not in existing_station_index:
             existing_stations.append(
                 {
-                    "station_code": station["station_code"],
-                    "au_state": station["au_state"],
-                    "station_name": station["station_name"],
-                    "fuel_types": [],
+                    CONF_STATION_CODE: station[CONF_STATION_CODE],
+                    CONF_AU_STATE: station[CONF_AU_STATE],
+                    CONF_STATION_NAME: station[CONF_STATION_NAME],
+                    CONF_STATION_FUEL_TYPES: [],
                 }
             )
 
     nickname_block["stations"] = existing_stations
 
     if location is not None:
-        nickname_block["location"] = location
+        nickname_block[CONF_LOCATION] = location
     if radius_km is not None:
-        nickname_block["radius_km"] = radius_km
+        nickname_block[CONF_RADIUS_KM] = radius_km
+    if cheapest_fuel_type is not None:
+        nickname_block[CONF_CHEAPEST_FUEL_TYPE] = cheapest_fuel_type
     if exclude_string is not None:
-        nickname_block["exclude_string"] = exclude_string
+        nickname_block[CONF_EXCLUDE_STRING] = exclude_string
+
     nicknames[nickname] = nickname_block
     new_entry["nicknames"] = nicknames
 
@@ -771,21 +787,21 @@ def _add_fuel_to_stations(
     existing_stations = list(nickname_block.get("stations", []))
 
     existing_station_index = {
-        (st["station_code"], st["au_state"]): st for st in existing_stations
+        (st[CONF_STATION_CODE], st[CONF_AU_STATE]): st for st in existing_stations
     }
 
     for station in stations:
-        key = (station["station_code"], station["au_state"])
+        key = (station[CONF_STATION_CODE], station[CONF_AU_STATE])
 
         if key not in existing_station_index:
             continue
 
         existing = dict(existing_station_index[key])
 
-        fuels = set(existing.get("fuel_types", []))
-        fuels.update(station.get("fuel_types", []))
+        fuels = set(existing.get(CONF_STATION_FUEL_TYPES, []))
+        fuels.update(station.get(CONF_STATION_FUEL_TYPES, []))
 
-        existing["fuel_types"] = sorted(fuels)
+        existing[CONF_STATION_FUEL_TYPES] = sorted(fuels)
 
         existing_station_index[key] = existing
 
@@ -807,8 +823,8 @@ def _validate_location(location: dict[str, Any] | None) -> tuple[float, float, s
         msg = "invalid_coordinates"
         raise ValueError(msg)
     try:
-        lat = cv.latitude(location["latitude"])
-        lon = cv.longitude(location["longitude"])
+        lat = cv.latitude(location[CONF_LATITUDE])
+        lon = cv.longitude(location[CONF_LONGITUDE])
     except Exception as err:
         msg = "invalid_coordinates"
         raise ValueError(msg) from err
@@ -846,7 +862,7 @@ def _get_state_defaults(
     Returns:
         Tuple of (default_fuel_type, fuel_types_list)
     """
-    latitude = suggested_location.get("latitude")
+    latitude = suggested_location.get(CONF_LATITUDE)
 
     # Since we only support 2 states, just use lat for now
     if latitude is not None and latitude >= LAT_TAS_N_BOUND:

@@ -23,6 +23,7 @@ ALL_FUEL_TYPES = {
 CHEAPEST_RESULTS_LIMIT = 5
 CONF_AU_STATE = "au_state"
 CONF_EXCLUDE_STRING = "exclude_string"
+CONF_CHEAPEST_FUEL_TYPE = "cheapest_fuel_type"
 CONF_FUEL_TYPE = "fuel_type"
 CONF_STATION_FUEL_TYPES = "fuel_types"
 CONF_LOCATION = "location"

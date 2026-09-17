@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_AU_STATE,
+    CONF_FUEL_TYPE,
     CONF_STATION_CODE,
     CONF_STATION_FUEL_TYPES,
     CONF_STATION_NAME,
@@ -138,6 +139,7 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
         coordinator: NSWFuelCoordinator,
         nickname: str,
         rank: int,
+        search_fuel_type: str,
         au_state: str | None = None,
     ) -> None:
         """Initialise cheapest fuel price sensor."""
@@ -146,6 +148,7 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
         self._nickname = nickname
         self._rank = rank
         self._index = rank - 1
+        self._search_fuel_type = search_fuel_type
 
         # Use nickname in unique id & name (therefore entity id) so user can distinguish
         self._attr_unique_id = f"{DOMAIN}_cheapest_{nickname}_{rank}"
@@ -207,7 +210,8 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
             CONF_STATION_CODE: station_price[CONF_STATION_CODE],
             CONF_STATION_NAME: station_price[CONF_STATION_NAME],
             "rank": self._rank,
-            "fuel_type": station_price["fuel_type"],
+            CONF_FUEL_TYPE: station_price[CONF_FUEL_TYPE],
+            "search_fuel_type": self._search_fuel_type,
             "price": station_price["price"],
             "price_last_changed": station_price.get("last_updated"),
             "price_last_checked": dt_util.now().strftime("%d %b %H:%M"),
@@ -270,6 +274,7 @@ def create_cheapest_fuel_sensors(
 
     for nickname in coordinator.nicknames:
         entries = cd.get("cheapest", {}).get(nickname, [])
+        search_fuel_type = coordinator.get_nickname_cheapest_fuel_type(nickname)
 
         for rank in (1, 2):
             au_state = None
@@ -282,6 +287,7 @@ def create_cheapest_fuel_sensors(
                     coordinator=coordinator,
                     nickname=nickname,
                     rank=rank,
+                    search_fuel_type=search_fuel_type,
                     au_state=au_state,
                 )
             )

@@ -215,8 +215,8 @@ async def test_cheapest_sensor_native_value_and_attributes(coordinator) -> None:
 
 def test_cheapest_sensor_icon() -> None:
     """Rank 1 uses highlighted icon."""
-    sensor1 = CheapestFuelPriceSensor(None, "Home", 1)
-    sensor2 = CheapestFuelPriceSensor(None, "Home", 2)
+    sensor1 = CheapestFuelPriceSensor(None, "Home", 1, "U91")
+    sensor2 = CheapestFuelPriceSensor(None, "Home", 2, "U91")
 
     assert sensor1.icon == "mdi:gas-station-in-use"
     assert sensor2.icon == "mdi:gas-station"

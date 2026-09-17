@@ -14,6 +14,10 @@ from nsw_tas_fuel import (
     NSWFuelApiClientError,
 )
 
+from custom_components.nsw_tas_fuel_station.const import (
+    CONF_CHEAPEST_FUEL_TYPE,
+    CONF_EXCLUDE_STRING,
+)
 from custom_components.nsw_tas_fuel_station.coordinator import NSWFuelCoordinator
 
 from .conftest import (
@@ -144,6 +148,60 @@ async def test_update_cheapest_stations(hass: HomeAssistant, mock_api_client) ->
     # verify the order by station_code
     codes = [entry["station_code"] for entry in home]
     assert codes == [STATION_NSW_C, STATION_NSW_A, STATION_NSW_B]
+
+
+@pytest.mark.parametrize(
+    ("stored_fuel_type", "expected_fuel_type"),
+    [
+        ("DL", "DL"),
+        (None, "E10-U91"),
+    ],
+    ids=["stored-value-used", "missing-value-falls-back-to-default"],
+)
+async def test_update_cheapest_stations_uses_nickname_fuel_type(
+    hass: HomeAssistant,
+    mock_api_client,
+    stored_fuel_type: str | None,
+    expected_fuel_type: str,
+) -> None:
+    """The cheapest query should prefer the saved nickname fuel type."""
+    nicknames = {
+        "Home": {
+            "location": {"latitude": HOME_LAT, "longitude": HOME_LNG},
+            CONF_CHEAPEST_FUEL_TYPE: stored_fuel_type,
+            CONF_EXCLUDE_STRING: "",
+            "stations": [
+                {
+                    "station_code": STATION_NSW_A,
+                    "au_state": "NSW",
+                    "fuel_types": ["U91", "E10", "DL"],
+                },
+                {
+                    "station_code": STATION_NSW_B,
+                    "au_state": "NSW",
+                    "fuel_types": ["U91", "E10", "DL"],
+                },
+                {
+                    "station_code": STATION_NSW_C,
+                    "au_state": "NSW",
+                    "fuel_types": ["U91", "E10", "DL"],
+                },
+            ],
+        }
+    }
+    coordinator = NSWFuelCoordinator(
+        hass=hass,
+        api=mock_api_client,
+        nicknames=nicknames,
+        scan_interval=timedelta(minutes=5),
+    )
+
+    await coordinator._update_cheapest_stations()
+
+    assert (
+        mock_api_client.get_fuel_prices_within_radius.await_args.kwargs["fuel_type"]
+        == expected_fuel_type
+    )
 
 
 async def test_async_update_auth_failure(
