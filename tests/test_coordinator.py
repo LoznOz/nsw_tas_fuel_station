@@ -101,7 +101,27 @@ async def test_update_favorite_stations(coordinator: NSWFuelCoordinator) -> None
     assert fuels["E10"].price is not None
 
 
-async def test_update_cheapest_stations(hass: HomeAssistant, mock_api_client) -> None:
+@pytest.mark.parametrize(
+    ("exclude_string", "expected_codes"),
+    [
+        pytest.param(
+            "",
+            [STATION_NSW_C, STATION_NSW_A, STATION_NSW_B],
+            id="without-exclusions",
+        ),
+        pytest.param(
+            "Ampol",
+            [STATION_NSW_C, STATION_NSW_B],
+            id="exclude-ampol",
+        ),
+    ],
+)
+async def test_update_cheapest_stations(
+    hass: HomeAssistant,
+    mock_api_client,
+    exclude_string: str,
+    expected_codes: list[int],
+) -> None:
     """NSW nickname returns stations sorted by cheapest price.
 
     We rely on the FUEL_PRICES mapping in tests/conftest.py; the
@@ -113,20 +133,24 @@ async def test_update_cheapest_stations(hass: HomeAssistant, mock_api_client) ->
     nicknames = {
         "Home": {
             "location": {"latitude": HOME_LAT, "longitude": HOME_LNG},
+            CONF_EXCLUDE_STRING: exclude_string,
             "stations": [
                 {
                     "station_code": STATION_NSW_A,
                     "au_state": "NSW",
+                    "station_name": "Ampol Foodary Batemans Bay",
                     "fuel_types": ["U91", "E10", "DL"],
                 },
                 {
                     "station_code": STATION_NSW_B,
                     "au_state": "NSW",
+                    "station_name": "Ultra Petroleum Ultra Mogo",
                     "fuel_types": ["U91", "E10", "DL"],
                 },
                 {
                     "station_code": STATION_NSW_C,
                     "au_state": "NSW",
+                    "station_name": "Shell Merimbula",
                     "fuel_types": ["U91", "E10", "DL"],
                 },
             ],
@@ -143,11 +167,10 @@ async def test_update_cheapest_stations(hass: HomeAssistant, mock_api_client) ->
 
     assert "Home" in cheapest
     home = cheapest["Home"]
-    assert len(home) == 3
+    assert len(home) == len(expected_codes)
 
-    # verify the order by station_code
     codes = [entry["station_code"] for entry in home]
-    assert codes == [STATION_NSW_C, STATION_NSW_A, STATION_NSW_B]
+    assert codes == expected_codes
 
 
 @pytest.mark.parametrize(
