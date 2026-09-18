@@ -96,7 +96,7 @@ Use the location selector to choose another location.  For example if you have c
 
 Fuel Type:
 
-Pick a fuel type to see a list of stations stocking that fuel type.  If, for example you only care about Diesel, you can create Diesel sensors and disable other sensors.
+Pick a fuel type to see a list of stations stocking that fuel type.  The fuel type you select will also be used as the search fuel for the cheapest sensors created for the nickname.
 
 Exclude string:
 
@@ -159,6 +159,16 @@ Your stations list is missing stations you expected to see.
 #### Resolution
 
 This can be for a number of reasons. For example you searched to U91 but the station does not stock U91. Use **Reconfigure** and try different fuel types and locations. Try using different locations and radius settings to get all the stations you want. If you are still not seeing what you want, see "I want to know the cheapest price close to my usual routes" below. You can also turn on debugging as described in [the readme](./README.md) and check the logs for errors and details of the parameters sent to NSW Fuel Check.
+
+## In order to change advanced settings I had to create another station sensor, how do I delete it?
+
+#### Description
+
+If you change a nickname's fuel type (from say U95 to U95-U98) or you add an exclude string you have to select at least one more station to effect the change.
+
+#### Resolution
+
+While you cannot delete a station you can select the sensor, on the details screen click on the cog and then slide the Enable button to off to disable the sensor which removes it from most screens and stops unnecessary API calls.
 
 ## I just want 1 cheapest sensor / I want a sensor to cover my entire trip to work but only close to my route
 
