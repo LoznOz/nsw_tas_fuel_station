@@ -18,8 +18,8 @@ from custom_components.nsw_tas_fuel_station.config_flow import _validate_locatio
 from custom_components.nsw_tas_fuel_station.const import (
     CONF_CHEAPEST_FUEL_TYPE,
     CONF_FUEL_TYPE,
-    CONF_LOCATION,
     CONF_LATITUDE,
+    CONF_LOCATION,
     CONF_LONGITUDE,
     CONF_NICKNAME,
     CONF_RADIUS_M,
