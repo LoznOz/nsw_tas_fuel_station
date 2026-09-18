@@ -14,14 +14,19 @@ from homeassistant.data_entry_flow import FlowResultType
 from nsw_tas_fuel import NSWFuelApiClientAuthError, NSWFuelApiClientError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.nsw_tas_fuel_station.config_flow import _validate_location
 from custom_components.nsw_tas_fuel_station.const import (
+    CONF_CHEAPEST_FUEL_TYPE,
     CONF_FUEL_TYPE,
     CONF_LOCATION,
+    CONF_LATITUDE,
+    CONF_LONGITUDE,
     CONF_NICKNAME,
     CONF_RADIUS_M,
     CONF_SELECTED_STATIONS,
     DEFAULT_NICKNAME,
     DOMAIN,
+    LAT_SE_BOUND,
 )
 
 from .conftest import (
@@ -41,6 +46,34 @@ from .conftest import (
 NSW_FUEL_API_DEFINITION = (
     "custom_components.nsw_tas_fuel_station.config_flow.NSWFuelApiClient"
 )
+
+
+def test_validate_location_rejects_out_of_bounds_coordinate() -> None:
+    """Location validation rejects coordinates outside the supported area."""
+    with pytest.raises(ValueError, match="invalid_coordinates"):
+        _validate_location(
+            {
+                CONF_LATITUDE: LAT_SE_BOUND - 0.01,
+                CONF_LONGITUDE: HOME_LNG,
+            }
+        )
+
+
+async def test_invalid_home_location_uses_advanced_options(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """Invalid HA Home coordinates route the flow to advanced options."""
+    hass.config.latitude = LAT_SE_BOUND - 0.01
+    hass.config.longitude = HOME_LNG
+
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await _start_flow_and_submit_creds(hass, CLIENT_ID, CLIENT_SECRET)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "advanced_options"
+    assert result["errors"]["base"] == "invalid_coordinates"
+    mock_api_client.get_fuel_prices_within_radius.assert_not_awaited()
 
 
 @pytest.mark.parametrize(
@@ -96,6 +129,9 @@ async def test_successful_config_flow(
         assert "location" in home
         assert home["location"]["latitude"] == latitude
         assert home["location"]["longitude"] == longitude
+        assert home[CONF_CHEAPEST_FUEL_TYPE] == (
+            "E10-U91" if expected_state == "NSW" else "U91"
+        )
 
         # Verify fuel types stored on the station reflect API-observed fuels.
         assert sorted(station.get("fuel_types", [])) == sorted(expected_fuel_types)
@@ -111,6 +147,7 @@ async def test_successful_config_flow(
         "existing",
         "select",
         "fuel",
+        "expected_cheapest_fuel_type",
         "radius_meters",
         "expected_radius_km",
         "expected",
@@ -121,6 +158,7 @@ async def test_successful_config_flow(
             {},
             [STATION_NSW_A],
             None,
+            "E10-U91",
             25_000,
             25,
             {STATION_NSW_A: ["E10", "U91"]},
@@ -131,6 +169,7 @@ async def test_successful_config_flow(
             {},
             [STATION_NSW_B],
             None,
+            "E10-U91",
             25_001,
             26,
             {STATION_NSW_B: ["U91"]},
@@ -155,6 +194,7 @@ async def test_successful_config_flow(
             },
             [STATION_NSW_B],
             None,
+            "E10-U91",
             10_001,
             11,
             {
@@ -188,6 +228,7 @@ async def test_successful_config_flow(
             },
             [STATION_NSW_A],
             "DL",
+            "DL",
             5_100,
             6,
             {
@@ -205,6 +246,7 @@ async def test_successful_reconfigure_flow(
     existing: dict[str, Any],
     select: list[int],
     fuel: str | None,
+    expected_cheapest_fuel_type: str,
     radius_meters: float,
     expected_radius_km: int,
     expected: dict[int, list[str]],
@@ -269,6 +311,7 @@ async def test_successful_reconfigure_flow(
 
     nickname_data = updated.data["nicknames"][DEFAULT_NICKNAME]
     assert nickname_data["radius_km"] == expected_radius_km
+    assert nickname_data[CONF_CHEAPEST_FUEL_TYPE] == expected_cheapest_fuel_type
 
     assert mock_api_client.get_fuel_prices_within_radius.await_args
     assert (
