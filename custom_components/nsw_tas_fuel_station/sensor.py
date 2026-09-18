@@ -202,7 +202,10 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
         pd = cd.get("cheapest", {}).get(self._nickname, [])
 
         if len(pd) <= self._index:
-            return None
+            return {
+                "rank": self._rank,
+                "search_fuel_type": self._search_fuel_type,
+            }
 
         station_price = pd[self._index]
 
