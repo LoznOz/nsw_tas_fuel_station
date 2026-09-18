@@ -231,7 +231,9 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_STATION_CODE: code,
                 CONF_AU_STATE: self._station_lookup[code][CONF_AU_STATE],
                 CONF_STATION_NAME: self._station_lookup[code][CONF_STATION_NAME],
-                CONF_STATION_FUEL_TYPES: self._station_lookup[code][CONF_STATION_FUEL_TYPES],
+                CONF_STATION_FUEL_TYPES: self._station_lookup[code][
+                    CONF_STATION_FUEL_TYPES
+                ],
             }
             for code in selected_stations
         ]
@@ -331,10 +333,11 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             "nicknames": {
                 nickname: {
                     CONF_LOCATION: self._flow_data.get(CONF_LOCATION),
-                    CONF_RADIUS_KM: self._flow_data.get(CONF_RADIUS_KM,
-                                                        DEFAULT_RADIUS_KM
+                    CONF_RADIUS_KM: self._flow_data.get(
+                        CONF_RADIUS_KM, DEFAULT_RADIUS_KM
                     ),
-                    CONF_CHEAPEST_FUEL_TYPE: self._flow_data.get(CONF_FUEL_TYPE,
+                    CONF_CHEAPEST_FUEL_TYPE: self._flow_data.get(
+                        CONF_FUEL_TYPE,
                         state_default_fuel(self._flow_data.get(CONF_AU_STATE)),
                     ),
                     CONF_EXCLUDE_STRING: self._flow_data.get(
@@ -344,8 +347,12 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         {
                             CONF_STATION_CODE: code,
                             CONF_AU_STATE: self._station_lookup[code][CONF_AU_STATE],
-                            CONF_STATION_NAME: self._station_lookup[code][CONF_STATION_NAME],
-                            CONF_STATION_FUEL_TYPES: self._station_lookup[code][CONF_STATION_FUEL_TYPES],
+                            CONF_STATION_NAME: self._station_lookup[code][
+                                CONF_STATION_NAME
+                            ],
+                            CONF_STATION_FUEL_TYPES: self._station_lookup[code][
+                                CONF_STATION_FUEL_TYPES
+                            ],
                         }
                         for code in selected_stations
                     ],
@@ -660,8 +667,13 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_STATION_FUEL_TYPES: [],
                     }
 
-                if fuel not in self._station_lookup[station_code][CONF_STATION_FUEL_TYPES]:
-                    self._station_lookup[station_code][CONF_STATION_FUEL_TYPES].append(fuel)
+                if (
+                    fuel
+                    not in self._station_lookup[station_code][CONF_STATION_FUEL_TYPES]
+                ):
+                    self._station_lookup[station_code][CONF_STATION_FUEL_TYPES].append(
+                        fuel
+                    )
 
                 # Only keep the first StationPrice per station for display list
                 if station_code not in seen:
@@ -723,7 +735,6 @@ def _add_stations_to_nickname(
     radius_km: int | None = None,
     cheapest_fuel_type: str | None = None,
     exclude_string: str | None = None,
-
 ) -> dict[str, Any]:
     """Add stations to an existing nickname. Update location etc if changed."""
 
@@ -816,7 +827,7 @@ def _validate_location(location: dict[str, Any] | None) -> tuple[float, float, s
     """Return lat, long and state if valid and roughly within NSW/ACT/TAS or raise ValueError.
 
     V2 of API added support for TAS, ACT always treated as NSW.
-    Other states using other APIs so a new state would be a major change.
+    Other states using other APIs so supporting a new state would be a major change.
     """
 
     if location is None or not isinstance(location, dict):
