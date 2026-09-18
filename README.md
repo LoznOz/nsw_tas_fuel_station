@@ -9,7 +9,7 @@
 Integration allowing fuel prices to be included in Home Assistant dashboards.
 
 ## Feedback
-Feedback, issues and feature requests are welcome and can be made [here](https://github.com/bicycleboy/nsw_tas_fuel_station/issues).
+Feedback, issues and feature requests are welcome and can be made [here](https://github.com/bicycleboy/nsw_tas_fuel_station/issues). And please star this repository. 
 
 ## Features
 - Allows users to include NSW, ACT and Tasmanian fuel prices into their home assistant dashboards and automations.  Currently only these Australian states are supported as other states offer different APIs.
