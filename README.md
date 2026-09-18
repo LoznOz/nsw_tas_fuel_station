@@ -13,7 +13,8 @@ Feedback, issues and feature requests are welcome and can be made [here](https:/
 
 ## Features
 - Allows users to include NSW, ACT and Tasmanian fuel prices into their home assistant dashboards and automations.  Currently only these Australian states are supported as other states offer different APIs.
-- This 2026 update to the existing core integration allows the user to configure the integration via the user interface (vs configuration.yaml) and adds a "cheapest E10/U91 today" sensor.
+- This 2026 update to the existing core integration allows the user to configure the integration via the user interface (vs configuration.yaml) and adds sensors for the cheapest fuel found by the API.
+- September 2026 release adds the ability to choose the fuel type searched for by the cheapest sensors primarily to support Diesel and U95/U98.  This release also adds the ability to exclude stations from the cheapest sensors such as members only brands.
 
 ## Example Cards for Your Home Assistant Dashboard
 

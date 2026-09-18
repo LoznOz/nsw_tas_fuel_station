@@ -65,7 +65,7 @@ Two additional sensors will be created:
 - Cheapest Home #1
 - Cheapest Home #2
 
-The NSW Fuel Check API returns a balance between cheapest fuel and distance from your home zone. For NSW the integration looks for the lowest of U91 and E10 prices.
+The NSW Fuel Check API returns a balance between cheapest fuel and distance from your home zone. By default for NSW the integration looks for the lowest of U91 and E10 prices and for Tasmania the cheapest U91.
 
 ![cheapest stations](./images/tile_card_find_cheapest_sensor.png)
 
@@ -98,6 +98,10 @@ Fuel Type:
 
 Pick a fuel type to see a list of stations stocking that fuel type.  If, for example you only care about Diesel, you can create Diesel sensors and disable other sensors.
 
+Exclude string:
+
+If your cheapest sensor typically shows a members only brand like Costco, and you are not a mewmber, you can filter this station out by entering a string like "members only". You can also enter any Brand or specific station you don't want to see listed on your cheapest sensors.
+
 ![advanced](./images/advanced.png)
 
 On Submit you will return to the Select Stations screen where there will be a list of stations for the location you entered and/or which carry the fuel you selected.
@@ -108,6 +112,7 @@ You can also add stations to an existing nickname.
 
 You can change the location associated with an existing nickname, for example to group stations under "trip to work", however, currently only the last location set will be used for the "Cheapest \[*nickname*\] #1/2" sensors (see also troubleshooting).
 
+For a new or existing nickname changing the fuel type searched also changes the fuel type searched for the cheapest stations.  If you are after premium petrol a good choice is P95-P98 since NSW Fuel Check will look for both.
 
 # Data updates
 
@@ -116,8 +121,6 @@ The **NSW Fuel Check** integration polls data from the API twiced a day by defau
 # Known limitations
 
 The integration currently only supports New South Wales, the ACT and Tasmania (Australia).
-
-The cheapest sensor currently only supports E10/U91, for other fuels see troubleshooting.
 
 Some fuel types such as EV can be selected but currently do not return any data.
 
@@ -178,30 +181,11 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 
 #### Description
 
-Currently the cheapest sensors only offer E10/U91.
+By default the cheapest sensors search for E10/U91.  Earlier releases only supported E10/U91 requiring an upgrade in HACS. Previous workarounds were limited to a finite set of chosen stations, whereas you will now see the cheapest stations found by NSW Fuel Check.
 
-Add a comment to [this issue](https://github.com/bicycleboy/nsw_tas_fuel_station/issues/13) to upvote for cheapest sensors for all fuel types!
+#### Resolution
 
-#### Resolution (Advanced)
-
-1. This is a workaround which requires comfort with editing configuration.yaml.  Unlike the E10/U91 cheapest sensors which use the API to find the cheapest stations by location as reported to NSW Fuel Check/FuelCheck - TAS, this solution only ever compares the stations you configure.
-2. Select your favorite stations at one or more locations using the **Reconfigure** option, creating multiple nicknames/locations if required.  You may wish to create multiple small (say 5Km) nicknames along major routes. To avoid API rate limits choose less than around 20 stations you are actually likely to use.
-3. Edit your configuration.yaml and create a template sensor similar to [this example (thanks to @TQ1331
-)](./example_cheapest_diesel.yaml).  You can cut and paste your sensor names into your favorite AI together with this example and it will doubtless generate the code for you. You can get names from the entities view, sorted by Integration. Your AI may also show you ways to generate all sensor names dynamically for each nickname.
-4. Restart HA to enable the template sensor.
-3. Add the template sensor to your dashboard, such as the example below. (Create a tile card, then use "Show card editor" to drop in the below.)
-```
-type: tile
-grid_options:
-  columns: 21
-  rows: 2
-entity: sensor.cheapest_diesel
-state_content:
-  - station_name
-  - state
-vertical: false
-features_position: bottom
-```
+Use the **Reconfigure** option on the integration page to view advanced options.  Change the fuel type to Premium Unleaded 95/98 or Diesel or your preferred fuel.  On the station select screen you must select at least one station in order to create or change the fuel type associated with the cheapest sensors.  You can disable station sensors if not required.
 
 # Feedback
 Feedback, ideas, requests, bugs all welcome and can be made [here](https://github.com/bicycleboy/nsw_tas_fuel_station/issues).
