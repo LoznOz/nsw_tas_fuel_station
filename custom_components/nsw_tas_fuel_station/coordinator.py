@@ -81,6 +81,7 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
             radius_km = nickname_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
 
             stations = nickname_data.get("stations", [])
+            # Use state of first station, as a nickname spanning states illogical/unsupported
             au_state = stations[0][CONF_AU_STATE] if stations else None
             exclude_string = nickname_data.get(CONF_EXCLUDE_STRING, "")
             cheapest_fuel_type = nickname_data.get(
