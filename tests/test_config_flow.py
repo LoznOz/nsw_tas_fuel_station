@@ -864,3 +864,66 @@ async def test_manage_station_rejects_empty_fuels_without_removal(
     assert result["step_id"] == "edit_station"
     assert result["errors"]["base"] == "select_fuel_or_remove_station"
     assert entry.data == original_data
+
+
+async def test_manage_station_offers_station_reported_fuels(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """Editing a station offers currently reported fuels, not only configured fuels."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "manage_stations"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "edit_station"
+
+    selector = result["data_schema"].schema[
+        next(
+            key
+            for key in result["data_schema"].schema
+            if isinstance(key, vol.Marker)
+            and key.schema == CONF_STATION_FUEL_TYPES
+        )
+    ]
+    option_values = {option["value"] for option in selector.config["options"]}
+    assert option_values == {"DL", "E10", "U91"}
+    mock_api_client.get_fuel_prices_for_station.assert_awaited_once_with(
+        str(STATION_NSW_A), "NSW"
+    )
