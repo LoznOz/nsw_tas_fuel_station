@@ -22,7 +22,8 @@
       "sensor_exists": "You have tried to configure an existing sensor for {station} ({fuel}). Choose a different station or fuel type.",
       "unknown": "Unknown error occurred.",
       "select_fuel_or_remove_station": "Select at least one fuel type, or choose Remove station.",
-      "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location."
+      "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location.",
+      "no_prices_for_location": "FuelCheck returned no matching prices for this location, radius and cheapest-fuel selection. Change the fuel type, location, radius or exclusion text and try again."
     },
     "step": {
       "advanced_options": {
@@ -52,11 +53,12 @@
       },
       "reconfigure": {
         "title": "Reconfigure NSW Fuel Check",
-        "description": "Choose whether to add configuration, edit an existing location, or manage configured stations.",
+        "description": "Choose whether to add configuration, edit an existing location, manage configured stations, or delete a location.",
         "menu_options": {
           "advanced_options": "Add configuration",
           "edit_location": "Edit existing location settings",
-          "manage_stations": "Manage configured stations"
+          "manage_stations": "Manage configured stations",
+          "delete_location": "Delete location"
         }
       },
       "manage_stations": {
@@ -100,6 +102,18 @@
       "confirm_remove_empty_location": {
         "title": "Remove empty location?",
         "description": "This is the last configured station for this nickname/location. Removing it will also remove the location device and its cheapest-price entities. Submit to confirm, or close this dialog to cancel.",
+        "data": {}
+      },
+      "delete_location": {
+        "title": "Delete location",
+        "description": "Choose the nickname/location to remove. All configured stations and entities belonging to that location will also be removed.",
+        "data": {
+          "nickname": "Nickname/location"
+        }
+      },
+      "confirm_delete_location": {
+        "title": "Delete {location}?",
+        "description": "This will permanently remove this location, all of its configured favorite-station entities, and its cheapest-price entities. Submit to confirm, or close this dialog to cancel.",
         "data": {}
       }
     }
