@@ -18,11 +18,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.nsw_tas_fuel_station.config_flow import _validate_location
 from custom_components.nsw_tas_fuel_station.const import (
     CONF_CHEAPEST_FUEL_TYPE,
+    CONF_EXCLUDE_STRING,
     CONF_FUEL_TYPE,
     CONF_LATITUDE,
     CONF_LOCATION,
     CONF_LONGITUDE,
     CONF_NICKNAME,
+    CONF_RADIUS_KM,
     CONF_RADIUS_M,
     CONF_SELECTED_STATIONS,
     CONF_STATION_CODE,
@@ -1058,3 +1060,186 @@ async def test_manage_station_removes_stale_entity_registry_entry(
 
     assert result["reason"] == "station_removed"
     assert entity_registry.async_get(entity.entity_id) is None
+
+
+async def test_edit_existing_location_updates_settings_without_station_selection(
+    hass: HomeAssistant,
+) -> None:
+    """Existing location settings can be changed without selecting stations."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "",
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ],
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload_entry:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        assert result["type"] is FlowResultType.MENU
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "edit_location"}
+        )
+        assert result["step_id"] == "edit_location"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        assert result["step_id"] == "edit_location_settings"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LOCATION: {
+                    CONF_LATITUDE: HOME_LAT,
+                    CONF_LONGITUDE: HOME_LNG,
+                    CONF_RADIUS_M: 15_500,
+                },
+                CONF_FUEL_TYPE: "P95",
+                CONF_EXCLUDE_STRING: "Members only",
+            },
+        )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "location_updated"
+    home = entry.data["nicknames"]["Home"]
+    assert home[CONF_RADIUS_KM] == 16
+    assert home[CONF_CHEAPEST_FUEL_TYPE] == "P95"
+    assert home[CONF_EXCLUDE_STRING] == "Members only"
+    assert len(home["stations"]) == 1
+    reload_entry.assert_called_once_with(entry.entry_id)
+
+
+async def test_last_station_requires_confirmation_then_removes_location(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """Removing a location's final station requires confirmation and removes device."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ]
+                },
+                "Petrol": {
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_B,
+                            "station_name": "Station B",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ]
+                },
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Home")},
+        name="Home",
+    )
+    entity_registry = er.async_get(hass)
+    favorite = entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{DOMAIN}_Home_{STATION_NSW_A}_NSW_U91",
+        config_entry=entry,
+        device_id=device.id,
+        suggested_object_id="home_station_a_u91",
+    )
+    cheapest = entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{DOMAIN}_cheapest_Home_1",
+        config_entry=entry,
+        device_id=device.id,
+        suggested_object_id="cheapest_home_1",
+    )
+
+    with (
+        patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client),
+        patch.object(hass.config_entries, "async_schedule_reload") as reload_entry,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "manage_stations"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_STATION_FUEL_TYPES: [],
+                "remove_station": True,
+            },
+        )
+
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "confirm_remove_empty_location"
+        assert "Home" in entry.data["nicknames"]
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {}
+        )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "location_removed"
+    assert "Home" not in entry.data["nicknames"]
+    assert "Petrol" in entry.data["nicknames"]
+    assert entity_registry.async_get(favorite.entity_id) is None
+    assert entity_registry.async_get(cheapest.entity_id) is None
+    assert device_registry.async_get(device.id) is None
+    reload_entry.assert_called_once_with(entry.entry_id)
