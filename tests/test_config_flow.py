@@ -709,7 +709,7 @@ async def test_manage_station_removal_is_nickname_scoped(
     )
     entry.add_to_hass(hass)
 
-            result = await hass.config_entries.flow.async_init(
+    result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_RECONFIGURE,
@@ -788,7 +788,7 @@ async def test_manage_station_edits_fuels_without_removing_station(
     )
     entry.add_to_hass(hass)
 
-            result = await hass.config_entries.flow.async_init(
+    result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_RECONFIGURE,
@@ -1044,9 +1044,7 @@ async def test_manage_station_removes_stale_entity_registry_entry(
         suggested_object_id="station_a_u91",
     )
 
-    with (
-        patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client),
-    ):
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
@@ -1109,7 +1107,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     )
     entry.add_to_hass(hass)
 
-            result = await hass.config_entries.flow.async_init(
+    result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_RECONFIGURE,
