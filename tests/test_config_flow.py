@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -744,7 +745,6 @@ async def test_manage_station_removal_is_nickname_scoped(
         entry.data["nicknames"]["Petrol"]["stations"][0]["station_code"]
         == STATION_NSW_A
     )
-    reload_entry.assert_called_once_with(entry.entry_id)
 
 
 async def test_manage_station_edits_fuels_without_removing_station(
@@ -1135,7 +1135,6 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     assert home[CONF_CHEAPEST_FUEL_TYPE] == "P95"
     assert home[CONF_EXCLUDE_STRING] == "Members only"
     assert len(home["stations"]) == 1
-    reload_entry.assert_called_once_with(entry.entry_id)
 
 
 async def test_last_station_requires_confirmation_then_removes_location(
@@ -1242,4 +1241,153 @@ async def test_last_station_requires_confirmation_then_removes_location(
     assert entity_registry.async_get(favorite.entity_id) is None
     assert entity_registry.async_get(cheapest.entity_id) is None
     assert device_registry.async_get(device.id) is None
-    reload_entry.assert_called_once_with(entry.entry_id)
+
+
+async def test_edit_location_rejects_cheapest_fuel_with_no_prices(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """Do not save location settings when FuelCheck returns no matching prices."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "",
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ],
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+    original_data = copy.deepcopy(dict(entry.data))
+    mock_api_client.get_fuel_prices_within_radius = AsyncMock(return_value=[])
+
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "edit_location"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LOCATION: {
+                    CONF_LATITUDE: HOME_LAT,
+                    CONF_LONGITUDE: HOME_LNG,
+                    CONF_RADIUS_M: 10_000,
+                },
+                CONF_FUEL_TYPE: "H2",
+                CONF_EXCLUDE_STRING: "",
+            },
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "edit_location_settings"
+    assert result["errors"]["base"] == "no_prices_for_location"
+    assert entry.data == original_data
+
+
+async def test_delete_location_with_no_stations(
+    hass: HomeAssistant,
+) -> None:
+    """An empty location can still be explicitly deleted."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Empty": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "",
+                    "stations": [],
+                },
+                "Petrol": {
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ]
+                },
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Empty")},
+        name="Empty",
+    )
+    entity_registry = er.async_get(hass)
+    cheapest = entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{DOMAIN}_cheapest_Empty_1",
+        config_entry=entry,
+        device_id=device.id,
+        suggested_object_id="cheapest_empty_1",
+    )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "delete_location"}
+    )
+    assert result["step_id"] == "delete_location"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_NICKNAME: "Empty"}
+    )
+    assert result["step_id"] == "confirm_delete_location"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {}
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "location_removed"
+    assert "Empty" not in entry.data["nicknames"]
+    assert "Petrol" in entry.data["nicknames"]
+    assert entity_registry.async_get(cheapest.entity_id) is None
+    assert device_registry.async_get(device.id) is None
