@@ -48,7 +48,11 @@
       },
       "reconfigure": {
         "title": "Reconfigure NSW Fuel Check",
-        "description": "Choose whether to add/update configuration or manage existing stations."
+        "description": "Choose whether to add/update configuration or manage existing stations.",
+        "menu_options": {
+          "advanced_options": "Add or update configuration",
+          "manage_stations": "Manage configured stations"
+        }
       },
       "manage_stations": {
         "title": "Manage configured stations",
