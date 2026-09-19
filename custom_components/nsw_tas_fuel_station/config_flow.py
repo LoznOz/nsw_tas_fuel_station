@@ -748,12 +748,13 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self.hass.config_entries.async_update_entry(
                 self._config_entry, data=new_data
             )
-            self.hass.config_entries.async_schedule_reload(
-                self._config_entry.entry_id
-            )
-            return self.async_abort(
-                reason="station_removed" if remove_station else "station_updated"
-            )
+
+            # Keep the management flow open so multiple stations can be
+            # maintained in one session. The config-entry update listener
+            # reloads the integration; no extra explicit reload is needed.
+            self._managed_station_code = None
+            self._managed_available_fuels = None
+            return await self.async_step_manage_station()
 
         return self.async_show_form(
             step_id="edit_station",
