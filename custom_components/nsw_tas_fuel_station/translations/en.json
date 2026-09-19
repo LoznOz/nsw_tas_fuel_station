@@ -23,7 +23,7 @@
       "unknown": "Unknown error occurred.",
       "select_fuel_or_remove_station": "Select at least one fuel type, or choose Remove station.",
       "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location.",
-      "no_prices_for_location": "FuelCheck returned no matching prices for this location, radius and cheapest-fuel selection. Change the fuel type, location, radius or exclusion text and try again."
+      "no_prices_for_location": "FuelCheck returned no matching prices for this location, search radius and cheapest-fuel selection. Try a different fuel type, increase the search radius, change the location, or adjust the station exclusion text."
     },
     "step": {
       "advanced_options": {
@@ -76,10 +76,10 @@
         }
       },
       "edit_station": {
-        "title": "Edit configured station",
-        "description": "Keep one or more fuel types selected, or enable Remove station to delete this station from the selected nickname/location.",
+        "title": "Edit station fuels or remove station",
+        "description": "Select the fuel types to keep for this station. Tap × on a selected fuel to remove it, or use Add / change fuel types to add another fuel currently reported by FuelCheck. To remove the whole station from this location, enable Remove station.",
         "data": {
-          "fuel_types": "Configured fuel types",
+          "fuel_types": "Add / change fuel types",
           "remove_station": "Remove station"
         }
       },
