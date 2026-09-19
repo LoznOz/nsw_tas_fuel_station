@@ -87,15 +87,23 @@ After initial setup, configuration changes are made from the integration entry's
 
 **Settings -> Devices & services -> NSW Fuel Check -> three dots -> Reconfigure**
 
-The menu provides four paths:
+The menu provides five paths:
 
-### Add configuration
+### Add new location
 
-Use **Add configuration** to add another nickname/location, add favorite stations, or add fuel configuration. A nickname groups station sensors and the two cheapest-price sensors, for example "Home", "Work", or another location that is useful to you.
+Use **Add new location** to create another nickname/location and select its initial favorite stations. A nickname groups station sensors and the two cheapest-price sensors, for example "Home", "Work", or another location that is useful to you.
 
 The location selector and search radius determine where FuelCheck searches. The selected fuel type determines the station list shown during configuration and the fuel searched by the cheapest sensors for that nickname/location.
 
 You can also enter exclusion text to omit matching station names from the cheapest-price results, for example a members-only station you do not use.
+
+### Add station to existing location
+
+Use **Add station to existing location** when you want to add another favorite station to a location that is already configured.
+
+First choose the existing location from the dropdown. Home Assistant device names are shown where available, so a renamed device such as "Petrol" can be selected without needing to know its original stored nickname.
+
+Then choose a search location/radius and fuel type to find the station. These search choices are temporary and are used only to find the station; they do not change the existing location's saved coordinates, radius, cheapest-fuel type or exclusion text.
 
 ### Edit existing location settings
 
