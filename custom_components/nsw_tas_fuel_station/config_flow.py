@@ -15,6 +15,7 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, UnitOfLength
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -344,10 +345,23 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._managed_nickname = cast(str, user_input[CONF_NICKNAME])
             return await self.async_step_manage_station()
 
-        options = [
-            SelectOptionDict(value=nickname, label=nickname)
-            for nickname in nicknames
-        ]
+        device_registry = dr.async_get(self.hass)
+        options: list[SelectOptionDict] = []
+        for nickname in nicknames:
+            device_id = dr.async_get_device_id_by_identifier(
+                self.hass,
+                (DOMAIN, f"location_{nickname}"),
+                config_entry_id=self._config_entry.entry_id,
+            )
+            device = device_registry.async_get(device_id) if device_id else None
+            label = (
+                device.name_by_user
+                if device is not None and device.name_by_user
+                else device.name
+                if device is not None and device.name
+                else nickname
+            )
+            options.append(SelectOptionDict(value=nickname, label=label))
         return self.async_show_form(
             step_id="manage_stations",
             data_schema=vol.Schema(
@@ -472,12 +486,29 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "select_fuel_or_remove_station"},
                 )
 
+            removed_fuels = (
+                configured_fuels
+                if remove_station
+                else [
+                    fuel
+                    for fuel in configured_fuels
+                    if fuel not in selected_fuels
+                ]
+            )
             new_data = _update_configured_station(
                 self._config_entry.data,
                 self._managed_nickname,
                 self._managed_station_code,
                 selected_fuels,
                 remove_station=remove_station,
+            )
+            _remove_station_entities(
+                self.hass,
+                self._config_entry,
+                self._managed_nickname,
+                self._managed_station_code,
+                station[CONF_AU_STATE],
+                removed_fuels,
             )
             self.hass.config_entries.async_update_entry(
                 self._config_entry, data=new_data
@@ -1024,6 +1055,43 @@ def _add_fuel_to_stations(
     new_entry["nicknames"] = nicknames
 
     return new_entry
+
+
+def _remove_station_entities(
+    hass: HomeAssistant,
+    entry: config_entries.ConfigEntry,
+    nickname: str,
+    station_code: int,
+    au_state: str,
+    fuel_types: list[str],
+) -> None:
+    """Remove entity-registry entries for removed station fuels."""
+    if not fuel_types:
+        return
+
+    device_id = dr.async_get_device_id_by_identifier(
+        hass,
+        (DOMAIN, f"location_{nickname}"),
+        config_entry_id=entry.entry_id,
+    )
+    if device_id is None:
+        return
+
+    entity_registry = er.async_get(hass)
+    removed_suffixes = {
+        f"_{station_code}_{au_state}_{fuel_type}" for fuel_type in fuel_types
+    }
+
+    for entity_entry in er.async_entries_for_config_entry(
+        entity_registry, entry.entry_id
+    ):
+        if entity_entry.device_id != device_id:
+            continue
+        if any(
+            entity_entry.unique_id.endswith(suffix)
+            for suffix in removed_suffixes
+        ):
+            entity_registry.async_remove(entity_entry.entity_id)
 
 
 def _update_configured_station(
