@@ -31,9 +31,7 @@ async def test_setup_entry_refreshes_coordinator_once(hass: HomeAssistant) -> No
     coordinator.async_config_entry_first_refresh = AsyncMock()
 
     with (
-        patch(
-            "custom_components.nsw_tas_fuel_station.NSWFuelApiClient"
-        ),
+        patch("custom_components.nsw_tas_fuel_station.NSWFuelApiClient"),
         patch(
             "custom_components.nsw_tas_fuel_station.NSWFuelCoordinator",
             return_value=coordinator,
@@ -66,7 +64,7 @@ async def test_setup_entry_refresh_failure_does_not_forward_platforms(
 
     coordinator = MagicMock()
     coordinator.async_config_entry_first_refresh = AsyncMock(
-        side_effect=ConfigEntryNotReady
+        side_effect=ConfigEntryNotReady("initial refresh failed")
     )
 
     with (
