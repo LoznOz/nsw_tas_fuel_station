@@ -15,7 +15,7 @@ Feedback, issues and feature requests are welcome and can be made [here](https:/
 - Allows users to include NSW, ACT and Tasmanian fuel prices into their home assistant dashboards and automations.  Currently only these Australian states are supported as other states offer different APIs.
 - This 2026 update to the existing core integration allows the user to configure the integration via the user interface (vs configuration.yaml) and adds sensors for the cheapest fuel found by the API.
 - September 2026 release adds the ability to choose the fuel type searched for by the cheapest sensors primarily to support Diesel and U95/U98.  This release also adds the ability to exclude stations from the cheapest sensors such as members only brands.
-- Reconfigure now provides dedicated paths to add configuration, edit existing nickname/location settings, and manage configured stations and their fuel types. Stations can be removed individually, and removing the final station from a nickname/location can also remove the now-empty location and its entities after confirmation.
+- Reconfigure now provides dedicated paths to add a new location, add stations to an existing location, edit existing nickname/location settings, and manage configured stations and their fuel types. Stations can be removed individually, and removing the final station from a nickname/location can also remove the now-empty location and its entities after confirmation.
 
 ## Example Cards for Your Home Assistant Dashboard
 
@@ -33,7 +33,8 @@ In Home Assistant go to:
 
 The Reconfigure menu provides:
 
-- **Add configuration** - add a new nickname/location, add stations, or add fuel configuration.
+- **Add new location** - create a new nickname/location and select its initial stations.
+- **Add station to existing location** - choose an existing location from a dropdown, then search for and add another station without changing that location's saved cheapest-fuel settings.
 - **Edit existing location settings** - change an existing location/search radius, cheapest-fuel search type, or cheapest-station exclusion text without changing its favorite stations.
 - **Manage configured stations** - choose an existing nickname/location, then add or remove configured fuel types for a station, or remove the station. After a successful change the station list stays open so you can continue managing the same location.
 - **Delete location** - remove an entire nickname/location, including its configured station entities and cheapest-price entities, after confirmation.
