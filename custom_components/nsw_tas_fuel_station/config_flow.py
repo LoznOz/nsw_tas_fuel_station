@@ -327,7 +327,162 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_menu(
             step_id="reconfigure",
-            menu_options=["advanced_options", "manage_stations"],
+            menu_options=[
+                "advanced_options",
+                "edit_location",
+                "manage_stations",
+            ],
+        )
+
+    async def async_step_edit_location(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose an existing nickname/location to edit."""
+        if self._config_entry is None:
+            return self.async_abort(reason="unknown_entry")
+
+        nicknames = self._config_entry.data.get("nicknames", {})
+        if not nicknames:
+            return self.async_abort(reason="no_configured_locations")
+
+        if user_input is not None:
+            self._managed_nickname = cast(str, user_input[CONF_NICKNAME])
+            return await self.async_step_edit_location_settings()
+
+        return self.async_show_form(
+            step_id="edit_location",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NICKNAME): SelectSelector(
+                        SelectSelectorConfig(
+                            options=self._nickname_options(nicknames),
+                            multiple=False,
+                            sort=False,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_edit_location_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit settings for an existing nickname/location without selecting stations."""
+        if self._config_entry is None or self._managed_nickname is None:
+            return self.async_abort(reason="unknown_entry")
+
+        nickname_data = self._config_entry.data.get("nicknames", {}).get(
+            self._managed_nickname
+        )
+        if nickname_data is None:
+            return self.async_abort(reason="unknown_entry")
+
+        saved_location = nickname_data.get(CONF_LOCATION) or {}
+        saved_radius_km = nickname_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
+        form_location = {
+            **saved_location,
+            CONF_RADIUS_M: DistanceConverter.convert(
+                saved_radius_km,
+                UnitOfLength.KILOMETERS,
+                UnitOfLength.METERS,
+            ),
+        }
+
+        if user_input is not None:
+            errors: dict[str, str] = {}
+            location = user_input.get(CONF_LOCATION)
+            try:
+                lat, lon, _au_state = _validate_location(location)
+            except ValueError as err:
+                errors["base"] = str(err)
+            else:
+                radius_meters = location.get(
+                    CONF_RADIUS_M, DEFAULT_RADIUS_KM * 1000
+                )
+                radius_km = max(
+                    1,
+                    math.ceil(
+                        DistanceConverter.convert(
+                            radius_meters,
+                            UnitOfLength.METERS,
+                            UnitOfLength.KILOMETERS,
+                        )
+                    ),
+                )
+                selected_fuel = cast(str, user_input[CONF_FUEL_TYPE])
+                _default_fuel, available_fuels = _get_state_defaults(
+                    {CONF_LATITUDE: lat, CONF_LONGITUDE: lon}
+                )
+                valid_fuels = {code for code, _label in available_fuels}
+                if selected_fuel not in valid_fuels:
+                    errors["base"] = "invalid_fuel_for_location"
+
+            if not errors:
+                new_data = copy.deepcopy(dict(self._config_entry.data))
+                block = new_data["nicknames"][self._managed_nickname]
+                block[CONF_LOCATION] = {
+                    CONF_LATITUDE: lat,
+                    CONF_LONGITUDE: lon,
+                }
+                block[CONF_RADIUS_KM] = radius_km
+                block[CONF_CHEAPEST_FUEL_TYPE] = selected_fuel
+                block[CONF_EXCLUDE_STRING] = user_input.get(
+                    CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
+                )
+                self.hass.config_entries.async_update_entry(
+                    self._config_entry, data=new_data
+                )
+                self.hass.config_entries.async_schedule_reload(
+                    self._config_entry.entry_id
+                )
+                return self.async_abort(reason="location_updated")
+
+            form_location = user_input.get(CONF_LOCATION, form_location)
+        else:
+            errors = {}
+
+        suggested_fuel, fuel_types = _get_state_defaults(form_location)
+        selected_fuel = (
+            user_input.get(CONF_FUEL_TYPE)
+            if user_input is not None
+            else nickname_data.get(CONF_CHEAPEST_FUEL_TYPE, suggested_fuel)
+        )
+        exclude_string = (
+            user_input.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING)
+            if user_input is not None
+            else nickname_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING)
+        )
+
+        return self.async_show_form(
+            step_id="edit_location_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_LOCATION,
+                        default=form_location,
+                    ): LocationSelector(LocationSelectorConfig(radius=True)),
+                    vol.Required(
+                        CONF_FUEL_TYPE,
+                        default=selected_fuel,
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                SelectOptionDict(value=code, label=label)
+                                for code, label in fuel_types
+                            ],
+                            multiple=False,
+                            sort=False,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_EXCLUDE_STRING,
+                        description={"suggested_value": exclude_string},
+                    ): TextSelector(),
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_manage_stations(
@@ -345,23 +500,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._managed_nickname = cast(str, user_input[CONF_NICKNAME])
             return await self.async_step_manage_station()
 
-        device_registry = dr.async_get(self.hass)
-        options: list[SelectOptionDict] = []
-        for nickname in nicknames:
-            device_id = dr.async_get_device_id_by_identifier(
-                self.hass,
-                (DOMAIN, f"location_{nickname}"),
-                config_entry_id=self._config_entry.entry_id,
-            )
-            device = device_registry.async_get(device_id) if device_id else None
-            label = (
-                device.name_by_user
-                if device is not None and device.name_by_user
-                else device.name
-                if device is not None and device.name
-                else nickname
-            )
-            options.append(SelectOptionDict(value=nickname, label=label))
+        options = self._nickname_options(nicknames)
         return self.async_show_form(
             step_id="manage_stations",
             data_schema=vol.Schema(
@@ -486,6 +625,12 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "select_fuel_or_remove_station"},
                 )
 
+            if (
+                remove_station
+                and len(nickname_data.get("stations", [])) == 1
+            ):
+                return await self.async_step_confirm_remove_empty_location()
+
             removed_fuels = (
                 configured_fuels
                 if remove_station
@@ -526,6 +671,61 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 fuel_options, configured_fuels
             ),
         )
+
+    async def async_step_confirm_remove_empty_location(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm removal of a location when its final station is removed."""
+        if self._config_entry is None or self._managed_nickname is None:
+            return self.async_abort(reason="unknown_entry")
+
+        if user_input is None:
+            return self.async_show_form(
+                step_id="confirm_remove_empty_location",
+                data_schema=vol.Schema({}),
+            )
+
+        new_data = copy.deepcopy(dict(self._config_entry.data))
+        new_data.get("nicknames", {}).pop(self._managed_nickname, None)
+
+        _remove_nickname_device_and_entities(
+            self.hass,
+            self._config_entry,
+            self._managed_nickname,
+        )
+        self.hass.config_entries.async_update_entry(
+            self._config_entry, data=new_data
+        )
+        self.hass.config_entries.async_schedule_reload(
+            self._config_entry.entry_id
+        )
+        return self.async_abort(reason="location_removed")
+
+    def _nickname_options(
+        self, nicknames: Mapping[str, Any]
+    ) -> list[SelectOptionDict]:
+        """Return nickname options labelled with the HA device display name."""
+        if self._config_entry is None:
+            return []
+
+        device_registry = dr.async_get(self.hass)
+        options: list[SelectOptionDict] = []
+        for nickname in nicknames:
+            device_id = dr.async_get_device_id_by_identifier(
+                self.hass,
+                (DOMAIN, f"location_{nickname}"),
+                config_entry_id=self._config_entry.entry_id,
+            )
+            device = device_registry.async_get(device_id) if device_id else None
+            label = (
+                device.name_by_user
+                if device is not None and device.name_by_user
+                else device.name
+                if device is not None and device.name
+                else nickname
+            )
+            options.append(SelectOptionDict(value=nickname, label=label))
+        return options
 
     @staticmethod
     def _build_edit_station_schema(
@@ -1055,6 +1255,31 @@ def _add_fuel_to_stations(
     new_entry["nicknames"] = nicknames
 
     return new_entry
+
+
+def _remove_nickname_device_and_entities(
+    hass: HomeAssistant,
+    entry: config_entries.ConfigEntry,
+    nickname: str,
+) -> None:
+    """Remove all entities and the HA device for an empty nickname/location."""
+    device_registry = dr.async_get(hass)
+    device_id = dr.async_get_device_id_by_identifier(
+        hass,
+        (DOMAIN, f"location_{nickname}"),
+        config_entry_id=entry.entry_id,
+    )
+    if device_id is None:
+        return
+
+    entity_registry = er.async_get(hass)
+    for entity_entry in er.async_entries_for_config_entry(
+        entity_registry, entry.entry_id
+    ):
+        if entity_entry.device_id == device_id:
+            entity_registry.async_remove(entity_entry.entity_id)
+
+    device_registry.async_remove_device(device_id)
 
 
 def _remove_station_entities(
