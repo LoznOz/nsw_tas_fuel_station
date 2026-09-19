@@ -8,7 +8,10 @@
       "no_configured_stations": "There are no configured stations to manage.",
       "station_not_found": "The selected station is no longer configured.",
       "station_removed": "Successfully removed the selected station.",
-      "station_updated": "Successfully updated the selected station fuel types."
+      "station_updated": "Successfully updated the selected station fuel types.",
+      "no_configured_locations": "There are no configured locations to edit.",
+      "location_updated": "Successfully updated the selected location settings.",
+      "location_removed": "Successfully removed the empty location and its entities."
     },
     "error": {
       "auth": "NSW Fuel API Key or API Secret is wrong.",
@@ -18,7 +21,8 @@
       "no_stations": "Please use the drop down to select at least one station.",
       "sensor_exists": "You have tried to configure an existing sensor for {station} ({fuel}). Choose a different station or fuel type.",
       "unknown": "Unknown error occurred.",
-      "select_fuel_or_remove_station": "Select at least one fuel type, or choose Remove station."
+      "select_fuel_or_remove_station": "Select at least one fuel type, or choose Remove station.",
+      "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location."
     },
     "step": {
       "advanced_options": {
@@ -48,9 +52,10 @@
       },
       "reconfigure": {
         "title": "Reconfigure NSW Fuel Check",
-        "description": "Choose whether to add/update configuration or manage existing stations.",
+        "description": "Choose whether to add configuration, edit an existing location, or manage configured stations.",
         "menu_options": {
-          "advanced_options": "Add or update configuration",
+          "advanced_options": "Add configuration",
+          "edit_location": "Edit existing location settings",
           "manage_stations": "Manage configured stations"
         }
       },
@@ -75,6 +80,27 @@
           "fuel_types": "Configured fuel types",
           "remove_station": "Remove station"
         }
+      },
+      "edit_location": {
+        "title": "Edit existing location",
+        "description": "Choose the existing nickname/location whose settings you want to change.",
+        "data": {
+          "nickname": "Nickname/location"
+        }
+      },
+      "edit_location_settings": {
+        "title": "Edit location settings",
+        "description": "Change the saved location/radius, cheapest-fuel search type, or cheapest-station exclusion text. This does not add or remove favorite stations.",
+        "data": {
+          "location": "Location and search radius",
+          "fuel_type": "Cheapest fuel type",
+          "exclude_string": "Exclude station names containing"
+        }
+      },
+      "confirm_remove_empty_location": {
+        "title": "Remove empty location?",
+        "description": "This is the last configured station for this nickname/location. Removing it will also remove the location device and its cheapest-price entities. Submit to confirm, or close this dialog to cancel.",
+        "data": {}
       }
     }
   }
