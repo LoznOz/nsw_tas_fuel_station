@@ -11,7 +11,8 @@
       "station_updated": "Successfully updated the selected station fuel types.",
       "no_configured_locations": "There are no configured locations to edit.",
       "location_updated": "Successfully updated the selected location settings.",
-      "location_removed": "Successfully removed the empty location and its entities."
+      "location_removed": "Successfully removed the empty location and its entities.",
+      "stations_added": "Successfully added the selected station(s) to the existing location."
     },
     "error": {
       "auth": "NSW Fuel API Key or API Secret is wrong.",
@@ -23,7 +24,8 @@
       "unknown": "Unknown error occurred.",
       "select_fuel_or_remove_station": "Select at least one fuel type, or choose Remove station.",
       "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location.",
-      "no_prices_for_location": "FuelCheck returned no matching prices for this location, search radius and cheapest-fuel selection. Try a different fuel type, increase the search radius, change the location, or adjust the station exclusion text."
+      "no_prices_for_location": "FuelCheck returned no matching prices for this location, search radius and cheapest-fuel selection. Try a different fuel type, increase the search radius, change the location, or adjust the station exclusion text.",
+      "nickname_already_exists": "That location nickname already exists. Use Add station to existing location, Edit existing location settings, or Manage configured stations instead."
     },
     "step": {
       "advanced_options": {
@@ -53,12 +55,13 @@
       },
       "reconfigure": {
         "title": "Reconfigure NSW Fuel Check",
-        "description": "Choose whether to add configuration, edit an existing location, manage configured stations, or delete a location.",
+        "description": "Choose whether to add a new location, add stations to an existing location, edit an existing location, manage configured stations, or delete a location.",
         "menu_options": {
-          "advanced_options": "Add configuration",
+          "advanced_options": "Add new location",
           "edit_location": "Edit existing location settings",
           "manage_stations": "Manage configured stations",
-          "delete_location": "Delete location"
+          "delete_location": "Delete location",
+          "add_station_existing": "Add station to existing location"
         }
       },
       "manage_stations": {
@@ -115,6 +118,21 @@
         "title": "Delete {location}?",
         "description": "This will permanently remove this location, all of its configured favorite-station entities, and its cheapest-price entities. Submit to confirm, or close this dialog to cancel.",
         "data": {}
+      },
+      "add_station_existing": {
+        "title": "Add station to existing location",
+        "description": "Choose the existing nickname/location that should receive the new station. The displayed name may be a Home Assistant device name; the integration will keep the correct stored nickname automatically.",
+        "data": {
+          "nickname": "Existing location"
+        }
+      },
+      "add_station_search": {
+        "title": "Find station to add",
+        "description": "Choose where and how far to search, and the fuel type used to find stations. These search choices are used only to find the station and do not change the existing location's saved cheapest-fuel settings.",
+        "data": {
+          "location": "Search location and radius",
+          "fuel_type": "Fuel type to find"
+        }
       }
     }
   }
