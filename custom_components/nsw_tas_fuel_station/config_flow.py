@@ -92,6 +92,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._config_entry: config_entries.ConfigEntry | None = None
         self._managed_nickname: str | None = None
         self._managed_station_code: int | None = None
+        self._managed_available_fuels: list[str] | None = None
 
     def is_matching(self, other_flow: Self) -> bool:
         """Return True if other_flow is matching this flow.
@@ -379,6 +380,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._managed_station_code = int(user_input[CONF_STATION_CODE])
+            self._managed_available_fuels = None
             return await self.async_step_edit_station()
 
         options = [
@@ -430,9 +432,31 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="station_not_found")
 
         configured_fuels = list(station.get(CONF_STATION_FUEL_TYPES, []))
+
+        if self._managed_available_fuels is None:
+            if self.api is None:
+                return self.async_abort(reason="unknown_entry")
+
+            try:
+                prices = await self.api.get_fuel_prices_for_station(
+                    str(self._managed_station_code),
+                    station[CONF_AU_STATE],
+                )
+            except NSWFuelApiClientAuthError:
+                return self.async_abort(reason="auth")
+            except NSWFuelApiClientError:
+                return self.async_abort(reason="connection")
+
+            self._managed_available_fuels = sorted(
+                {
+                    *configured_fuels,
+                    *(price.fuel_type for price in prices),
+                }
+            )
+
         fuel_options = [
             SelectOptionDict(value=code, label=ALL_FUEL_TYPES.get(code, code))
-            for code in configured_fuels
+            for code in self._managed_available_fuels
         ]
 
         if user_input is not None:
