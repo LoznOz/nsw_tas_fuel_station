@@ -331,6 +331,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 "advanced_options",
                 "edit_location",
                 "manage_stations",
+                "delete_location",
             ],
         )
 
@@ -418,6 +419,35 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 if selected_fuel not in valid_fuels:
                     errors["base"] = "invalid_fuel_for_location"
 
+                if not errors:
+                    if self.api is None:
+                        errors["base"] = "connection"
+                    else:
+                        try:
+                            nearby = await self.api.get_fuel_prices_within_radius(
+                                latitude=lat,
+                                longitude=lon,
+                                radius=radius_km,
+                                fuel_type=selected_fuel,
+                            )
+                        except NSWFuelApiClientAuthError:
+                            errors["base"] = "auth"
+                        except NSWFuelApiClientError:
+                            errors["base"] = "no_prices_for_location"
+                        else:
+                            exclude_string = user_input.get(
+                                CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
+                            )
+                            matching = [
+                                station_price
+                                for station_price in nearby
+                                if not exclude_string
+                                or exclude_string.lower()
+                                not in station_price.station.name.lower()
+                            ]
+                            if not matching:
+                                errors["base"] = "no_prices_for_location"
+
             if not errors:
                 new_data = copy.deepcopy(dict(self._config_entry.data))
                 block = new_data["nicknames"][self._managed_nickname]
@@ -432,9 +462,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
                 self.hass.config_entries.async_update_entry(
                     self._config_entry, data=new_data
-                )
-                self.hass.config_entries.async_schedule_reload(
-                    self._config_entry.entry_id
                 )
                 return self.async_abort(reason="location_updated")
 
@@ -484,6 +511,69 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
         )
+
+    async def async_step_delete_location(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose an existing nickname/location to delete."""
+        if self._config_entry is None:
+            return self.async_abort(reason="unknown_entry")
+
+        nicknames = self._config_entry.data.get("nicknames", {})
+        if not nicknames:
+            return self.async_abort(reason="no_configured_locations")
+
+        if user_input is not None:
+            self._managed_nickname = cast(str, user_input[CONF_NICKNAME])
+            return await self.async_step_confirm_delete_location()
+
+        return self.async_show_form(
+            step_id="delete_location",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NICKNAME): SelectSelector(
+                        SelectSelectorConfig(
+                            options=self._nickname_options(nicknames),
+                            multiple=False,
+                            sort=False,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_confirm_delete_location(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm deletion of an entire nickname/location."""
+        if self._config_entry is None or self._managed_nickname is None:
+            return self.async_abort(reason="unknown_entry")
+
+        if self._managed_nickname not in self._config_entry.data.get("nicknames", {}):
+            return self.async_abort(reason="unknown_entry")
+
+        if user_input is None:
+            return self.async_show_form(
+                step_id="confirm_delete_location",
+                data_schema=vol.Schema({}),
+                description_placeholders={
+                    "location": self._nickname_label(self._managed_nickname)
+                },
+            )
+
+        new_data = copy.deepcopy(dict(self._config_entry.data))
+        new_data.get("nicknames", {}).pop(self._managed_nickname, None)
+
+        _remove_nickname_device_and_entities(
+            self.hass,
+            self._config_entry,
+            self._managed_nickname,
+        )
+        self.hass.config_entries.async_update_entry(
+            self._config_entry, data=new_data
+        )
+        return self.async_abort(reason="location_removed")
 
     async def async_step_manage_stations(
         self, user_input: dict[str, Any] | None = None
@@ -696,36 +786,34 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         self.hass.config_entries.async_update_entry(
             self._config_entry, data=new_data
         )
-        self.hass.config_entries.async_schedule_reload(
-            self._config_entry.entry_id
-        )
         return self.async_abort(reason="location_removed")
+
+    def _nickname_label(self, nickname: str) -> str:
+        """Return the HA device display name for a stored nickname when available."""
+        if self._config_entry is None:
+            return nickname
+
+        device_registry = dr.async_get(self.hass)
+        device_id = dr.async_get_device_id_by_identifier(
+            self.hass,
+            (DOMAIN, f"location_{nickname}"),
+            config_entry_id=self._config_entry.entry_id,
+        )
+        device = device_registry.async_get(device_id) if device_id else None
+        if device is not None and device.name_by_user:
+            return device.name_by_user
+        if device is not None and device.name:
+            return device.name
+        return nickname
 
     def _nickname_options(
         self, nicknames: Mapping[str, Any]
     ) -> list[SelectOptionDict]:
         """Return nickname options labelled with the HA device display name."""
-        if self._config_entry is None:
-            return []
-
-        device_registry = dr.async_get(self.hass)
-        options: list[SelectOptionDict] = []
-        for nickname in nicknames:
-            device_id = dr.async_get_device_id_by_identifier(
-                self.hass,
-                (DOMAIN, f"location_{nickname}"),
-                config_entry_id=self._config_entry.entry_id,
-            )
-            device = device_registry.async_get(device_id) if device_id else None
-            label = (
-                device.name_by_user
-                if device is not None and device.name_by_user
-                else device.name
-                if device is not None and device.name
-                else nickname
-            )
-            options.append(SelectOptionDict(value=nickname, label=label))
-        return options
+        return [
+            SelectOptionDict(value=nickname, label=self._nickname_label(nickname))
+            for nickname in nicknames
+        ]
 
     @staticmethod
     def _build_edit_station_schema(
