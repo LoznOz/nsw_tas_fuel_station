@@ -685,7 +685,13 @@ async def test_manage_station_removal_is_nickname_scoped(
                             "station_name": "Station A",
                             "au_state": "NSW",
                             "fuel_types": ["E10", "U91"],
-                        }
+                        },
+                        {
+                            "station_code": STATION_NSW_B,
+                            "station_name": "Station B",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        },
                     ]
                 },
                 "Petrol": {
@@ -703,8 +709,7 @@ async def test_manage_station_removal_is_nickname_scoped(
     )
     entry.add_to_hass(hass)
 
-    with patch.object(hass.config_entries, "async_schedule_reload") as reload_entry:
-        result = await hass.config_entries.flow.async_init(
+            result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_RECONFIGURE,
@@ -737,9 +742,13 @@ async def test_manage_station_removal_is_nickname_scoped(
             },
         )
 
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "station_removed"
-    assert entry.data["nicknames"]["Home"]["stations"] == []
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "manage_station"
+    assert len(entry.data["nicknames"]["Home"]["stations"]) == 1
+    assert (
+        entry.data["nicknames"]["Home"]["stations"][0]["station_code"]
+        == STATION_NSW_B
+    )
     assert len(entry.data["nicknames"]["Petrol"]["stations"]) == 1
     assert (
         entry.data["nicknames"]["Petrol"]["stations"][0]["station_code"]
@@ -779,8 +788,7 @@ async def test_manage_station_edits_fuels_without_removing_station(
     )
     entry.add_to_hass(hass)
 
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await hass.config_entries.flow.async_init(
+            result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_RECONFIGURE,
@@ -804,8 +812,8 @@ async def test_manage_station_edits_fuels_without_removing_station(
             },
         )
 
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "station_updated"
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "manage_station"
     stations = entry.data["nicknames"]["Home"]["stations"]
     assert len(stations) == 2
     assert stations[0]["fuel_types"] == ["U91"]
@@ -1006,6 +1014,12 @@ async def test_manage_station_removes_stale_entity_registry_entry(
                             "station_name": "Station A",
                             "au_state": "NSW",
                             "fuel_types": ["U91"],
+                        },
+                        {
+                            "station_code": STATION_NSW_B,
+                            "station_name": "Station B",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
                         }
                     ]
                 }
@@ -1032,7 +1046,6 @@ async def test_manage_station_removes_stale_entity_registry_entry(
 
     with (
         patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client),
-        patch.object(hass.config_entries, "async_schedule_reload"),
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -1058,7 +1071,8 @@ async def test_manage_station_removes_stale_entity_registry_entry(
             },
         )
 
-    assert result["reason"] == "station_removed"
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "manage_station"
     assert entity_registry.async_get(entity.entity_id) is None
 
 
@@ -1095,8 +1109,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     )
     entry.add_to_hass(hass)
 
-    with patch.object(hass.config_entries, "async_schedule_reload") as reload_entry:
-        result = await hass.config_entries.flow.async_init(
+            result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_RECONFIGURE,
@@ -1200,7 +1213,6 @@ async def test_last_station_requires_confirmation_then_removes_location(
 
     with (
         patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client),
-        patch.object(hass.config_entries, "async_schedule_reload") as reload_entry,
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
