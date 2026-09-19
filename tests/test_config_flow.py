@@ -11,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from nsw_tas_fuel import NSWFuelApiClientAuthError, NSWFuelApiClientError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -927,3 +928,133 @@ async def test_manage_station_offers_station_reported_fuels(
     mock_api_client.get_fuel_prices_for_station.assert_awaited_once_with(
         str(STATION_NSW_A), "NSW"
     )
+
+
+async def test_manage_station_uses_device_user_name_for_nickname_label(
+    hass: HomeAssistant,
+) -> None:
+    """Reconfigure shows a renamed HA device while preserving stored nickname value."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Home")},
+        name="Home",
+    )
+    device_registry.async_update_device(device.id, name_by_user="Diesel")
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "manage_stations"}
+    )
+
+    selector = result["data_schema"].schema[
+        next(
+            key
+            for key in result["data_schema"].schema
+            if isinstance(key, vol.Marker) and key.schema == CONF_NICKNAME
+        )
+    ]
+    assert selector.config["options"] == [{"value": "Home", "label": "Diesel"}]
+
+
+async def test_manage_station_removes_stale_entity_registry_entry(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """Removing a configured station also removes its registry entity."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Home")},
+        name="Home",
+    )
+    entity_registry = er.async_get(hass)
+    entity = entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{DOMAIN}_Home_{STATION_NSW_A}_NSW_U91",
+        config_entry=entry,
+        device_id=device.id,
+        suggested_object_id="station_a_u91",
+    )
+
+    with (
+        patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client),
+        patch.object(hass.config_entries, "async_schedule_reload"),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "manage_stations"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_STATION_FUEL_TYPES: [],
+                "remove_station": True,
+            },
+        )
+
+    assert result["reason"] == "station_removed"
+    assert entity_registry.async_get(entity.entity_id) is None
