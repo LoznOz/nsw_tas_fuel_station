@@ -1401,3 +1401,110 @@ async def test_delete_location_with_no_stations(
     assert "Petrol" in entry.data["nicknames"]
     assert entity_registry.async_get(cheapest.entity_id) is None
     assert device_registry.async_get(device.id) is None
+
+
+async def test_add_station_to_existing_location_uses_stored_nickname(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """A renamed device adds stations to its stored nickname without creating a duplicate."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "Members only",
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        }
+                    ],
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Home")},
+        name="Home",
+    )
+    device_registry.async_update_device(device.id, name_by_user="Petrol")
+
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        assert result["type"] is FlowResultType.MENU
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "add_station_existing"}
+        )
+        assert result["step_id"] == "add_station_existing"
+
+        selector = result["data_schema"].schema[
+            next(
+                key
+                for key in result["data_schema"].schema
+                if isinstance(key, vol.Marker) and key.schema == CONF_NICKNAME
+            )
+        ]
+        assert selector.config["options"] == [{"value": "Home", "label": "Petrol"}]
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        assert result["step_id"] == "add_station_search"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LOCATION: {
+                    CONF_LATITUDE: HOME_LAT,
+                    CONF_LONGITUDE: HOME_LNG,
+                    CONF_RADIUS_M: 20_000,
+                },
+                CONF_FUEL_TYPE: "U91",
+            },
+        )
+        assert result["step_id"] == "station_select"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_SELECTED_STATIONS: [str(STATION_NSW_B)]},
+        )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "stations_added"
+    assert set(entry.data["nicknames"]) == {"Home"}
+
+    home = entry.data["nicknames"]["Home"]
+    assert {station["station_code"] for station in home["stations"]} == {
+        STATION_NSW_A,
+        STATION_NSW_B,
+    }
+    assert home[CONF_LOCATION] == {
+        CONF_LATITUDE: HOME_LAT,
+        CONF_LONGITUDE: HOME_LNG,
+    }
+    assert home[CONF_RADIUS_KM] == 10
+    assert home[CONF_CHEAPEST_FUEL_TYPE] == "U91"
+    assert home[CONF_EXCLUDE_STRING] == "Members only"
