@@ -35,11 +35,14 @@ The Reconfigure menu provides:
 
 - **Add configuration** - add a new nickname/location, add stations, or add fuel configuration.
 - **Edit existing location settings** - change an existing location/search radius, cheapest-fuel search type, or cheapest-station exclusion text without changing its favorite stations.
-- **Manage configured stations** - choose an existing nickname/location, then edit the fuel types configured for a station or remove the station.
+- **Manage configured stations** - choose an existing nickname/location, then add or remove configured fuel types for a station, or remove the station. After a successful change the station list stays open so you can continue managing the same location.
+- **Delete location** - remove an entire nickname/location, including its configured station entities and cheapest-price entities, after confirmation.
 
 When editing a station, the fuel selector shows the fuel types currently reported by FuelCheck for that station, plus any fuel types already configured for it. This avoids offering fuels that the selected station does not currently report.
 
-If the final configured station is removed from a nickname/location, Home Assistant asks for confirmation before removing the now-empty location device and its cheapest-price entities.
+If the final configured station is removed from a nickname/location, Home Assistant asks for confirmation before removing the now-empty location device and its cheapest-price entities. You can also use **Delete location** directly, including for an already-empty location.
+
+Changes to an existing location's cheapest-fuel settings are validated against FuelCheck before they are saved. If the selected fuel, radius, location or exclusion text produces no matching prices, the form remains open and explains what to change.
 
 Home Assistant places **Reconfigure** in the integration entry's three-dot menu, so it may not be immediately obvious to new users. Use the path above whenever you want to modify an existing NSW Fuel Check configuration.
 
