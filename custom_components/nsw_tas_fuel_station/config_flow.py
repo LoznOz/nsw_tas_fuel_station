@@ -17,6 +17,8 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, UnitOfLength
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    BooleanSelector,
+    BooleanSelectorConfig,
     LocationSelector,
     LocationSelectorConfig,
     SelectOptionDict,
@@ -88,6 +90,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._station_lookup: dict[int, dict[str, Any]] = {}
         self.api: NSWFuelApiClient | None = None
         self._config_entry: config_entries.ConfigEntry | None = None
+        self._managed_nickname: str | None = None
+        self._managed_station_code: int | None = None
 
     def is_matching(self, other_flow: Self) -> bool:
         """Return True if other_flow is matching this flow.
@@ -316,7 +320,182 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 client_secret=self._config_entry.data[CONF_CLIENT_SECRET],
             )
 
-        return await self.async_step_advanced_options(user_input)
+        if user_input is not None:
+            return await self.async_step_advanced_options(user_input)
+
+        return self.async_show_menu(
+            step_id="reconfigure",
+            menu_options=["advanced_options", "manage_stations"],
+        )
+
+    async def async_step_manage_stations(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose an existing nickname whose stations will be managed."""
+        if self._config_entry is None:
+            return self.async_abort(reason="unknown_entry")
+
+        nicknames = self._config_entry.data.get("nicknames", {})
+        if not nicknames:
+            return self.async_abort(reason="no_configured_stations")
+
+        if user_input is not None:
+            self._managed_nickname = cast(str, user_input[CONF_NICKNAME])
+            return await self.async_step_manage_station()
+
+        options = [
+            SelectOptionDict(value=nickname, label=nickname)
+            for nickname in nicknames
+        ]
+        return self.async_show_form(
+            step_id="manage_stations",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NICKNAME): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            multiple=False,
+                            sort=False,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_manage_station(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose a configured station to edit or remove."""
+        if self._config_entry is None or self._managed_nickname is None:
+            return self.async_abort(reason="unknown_entry")
+
+        nickname_data = self._config_entry.data.get("nicknames", {}).get(
+            self._managed_nickname, {}
+        )
+        stations = nickname_data.get("stations", [])
+        if not stations:
+            return self.async_abort(reason="no_configured_stations")
+
+        if user_input is not None:
+            self._managed_station_code = int(user_input[CONF_STATION_CODE])
+            return await self.async_step_edit_station()
+
+        options = [
+            SelectOptionDict(
+                value=str(station[CONF_STATION_CODE]),
+                label=f"{station[CONF_STATION_NAME]} ({station[CONF_STATION_CODE]})",
+            )
+            for station in stations
+        ]
+        return self.async_show_form(
+            step_id="manage_station",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_STATION_CODE): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            multiple=False,
+                            sort=False,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_edit_station(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit configured fuels for a station or remove the station."""
+        if (
+            self._config_entry is None
+            or self._managed_nickname is None
+            or self._managed_station_code is None
+        ):
+            return self.async_abort(reason="unknown_entry")
+
+        nickname_data = self._config_entry.data.get("nicknames", {}).get(
+            self._managed_nickname, {}
+        )
+        station = next(
+            (
+                item
+                for item in nickname_data.get("stations", [])
+                if item[CONF_STATION_CODE] == self._managed_station_code
+            ),
+            None,
+        )
+        if station is None:
+            return self.async_abort(reason="station_not_found")
+
+        configured_fuels = list(station.get(CONF_STATION_FUEL_TYPES, []))
+        fuel_options = [
+            SelectOptionDict(value=code, label=ALL_FUEL_TYPES.get(code, code))
+            for code in configured_fuels
+        ]
+
+        if user_input is not None:
+            remove_station = bool(user_input.get("remove_station", False))
+            selected_fuels = list(user_input.get(CONF_STATION_FUEL_TYPES, []))
+
+            if not remove_station and not selected_fuels:
+                return self.async_show_form(
+                    step_id="edit_station",
+                    data_schema=self._build_edit_station_schema(
+                        fuel_options, configured_fuels
+                    ),
+                    errors={"base": "select_fuel_or_remove_station"},
+                )
+
+            new_data = _update_configured_station(
+                self._config_entry.data,
+                self._managed_nickname,
+                self._managed_station_code,
+                selected_fuels,
+                remove_station=remove_station,
+            )
+            self.hass.config_entries.async_update_entry(
+                self._config_entry, data=new_data
+            )
+            self.hass.config_entries.async_schedule_reload(
+                self._config_entry.entry_id
+            )
+            return self.async_abort(
+                reason="station_removed" if remove_station else "station_updated"
+            )
+
+        return self.async_show_form(
+            step_id="edit_station",
+            data_schema=self._build_edit_station_schema(
+                fuel_options, configured_fuels
+            ),
+        )
+
+    @staticmethod
+    def _build_edit_station_schema(
+        fuel_options: list[SelectOptionDict],
+        configured_fuels: list[str],
+    ) -> vol.Schema:
+        """Build the station edit form."""
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_STATION_FUEL_TYPES,
+                    default=configured_fuels,
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=fuel_options,
+                        multiple=True,
+                        sort=False,
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional("remove_station", default=False): BooleanSelector(
+                    BooleanSelectorConfig()
+                ),
+            }
+        )
 
     async def _create_new_config_entry(
         self, nickname: str, selected_stations: list[int]
@@ -819,6 +998,44 @@ def _add_fuel_to_stations(
     nickname_block["stations"] = list(existing_station_index.values())
     nicknames[nickname] = nickname_block
     new_entry["nicknames"] = nicknames
+
+    return new_entry
+
+
+def _update_configured_station(
+    entry: Mapping[str, Any],
+    nickname: str,
+    station_code: int,
+    fuel_types: list[str],
+    *,
+    remove_station: bool = False,
+) -> dict[str, Any]:
+    """Update configured fuels for one station, or remove that station."""
+    new_entry = copy.deepcopy(dict(entry))
+    nicknames = new_entry.get("nicknames", {})
+    if nickname not in nicknames:
+        raise ValueError("Nickname does not exist")
+
+    nickname_block = nicknames[nickname]
+    stations = list(nickname_block.get("stations", []))
+    matching = [
+        station for station in stations if station[CONF_STATION_CODE] == station_code
+    ]
+    if not matching:
+        raise ValueError("Station does not exist")
+
+    if remove_station:
+        nickname_block["stations"] = [
+            station
+            for station in stations
+            if station[CONF_STATION_CODE] != station_code
+        ]
+    else:
+        for station in stations:
+            if station[CONF_STATION_CODE] == station_code:
+                station[CONF_STATION_FUEL_TYPES] = sorted(set(fuel_types))
+                break
+        nickname_block["stations"] = stations
 
     return new_entry
 
