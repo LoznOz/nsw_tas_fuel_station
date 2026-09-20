@@ -98,9 +98,7 @@ async def test_async_setup_entry_creates_entities(
         entities.extend(new_entities)
 
     refresh = AsyncMock()
-    with patch.object(
-        coordinator, "async_config_entry_first_refresh", new=refresh
-    ):
+    with patch.object(coordinator, "async_config_entry_first_refresh", new=refresh):
         await async_setup_entry(hass, mock_config_entry, _add_entities)
 
     refresh.assert_not_awaited()
