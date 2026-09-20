@@ -46,7 +46,9 @@ DEFAULT_SCAN_INTERVAL = datetime.timedelta(
 )  # It can be days between price changes
 E10_AVAILABLE_STATES: tuple[str, ...] = ("NSW",)
 E10_CODE = "E10"
-LAT_CAMERON_CORNER_BOUND = -27.9 # not actually the corner because border is not straight
+LAT_CAMERON_CORNER_BOUND = (
+    -27.9
+)  # not actually the corner because border is not straight
 LON_CAMERON_CORNER_BOUND = 141.00180
 LAT_SE_BOUND = -50
 LON_SE_BOUND = 154
