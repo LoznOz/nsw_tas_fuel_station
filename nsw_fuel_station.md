@@ -9,9 +9,9 @@ ha_codeowners:
 ha_domain: nsw_tas_fuel_station
 ha_integration_type: hub
 related:
-  - url: https://github.com/bicycleboy/nsw_fuel_tas_station
+  - url: https://github.com/bicycleboy/nsw_tas_fuel_station
     title: Integration Source
-  - url: https://https://github.com/bicycleboy/nsw-fuel-api-client
+  - url: https://github.com/bicycleboy/nsw-fuel-api-client
     title: API Client Source
 ---
 -->
@@ -20,14 +20,14 @@ The **NSW Fuel Check** integration is used to integrate with the NSW Government 
 
 This integration only supports Australian states NSW, the ACT and Tasmania.
 
-Like weather integrations, the idea is not to replace the NSW Fuel Check App but give you a glance at prices as you visit your home assistant dashboard.
+Like weather integrations, the idea is not to replace the NSW Fuel Check App but give you a glance at prices as you visit your Home Assistant dashboard.
 
 
 # Prerequisites
 
 1. Live or travel in NSW, the ACT or Tasmania.
 2. Visit api.nsw.gov.au.
-3. Subscribe to the FuelCheck API and create an app to obtain your API Key and Secret. Signup is free. The site requires an email address but does not spam you.  When prompted to create and name your app it can have any name.  Make a note of the API Key and API Secret.
+3. Subscribe to the FuelCheck API and create an app to obtain your API Key and Secret. Sign-up is free. The site requires an email address but does not spam you.  When prompted to create and name your app it can have any name.  Make a note of the API Key and API Secret.
 
 ![API Signup](./images/api_signup.png)
 
@@ -46,7 +46,7 @@ Once you have validated your key and secret you will be prompted to select fuel 
 
 ![select stations](./images/select_stations.png)
 
-Select around 1 - 4 stations, more is hard to display neatly on a dashboard.  Also be aware the API does have rate limits if you choose 10's of stations.
+Select around 1–4 stations; more can be difficult to display neatly on a dashboard. Also be aware that the API has rate limits if you choose many stations.
 
 Sensors will be created for each station you select.  In NSW and the ACT the default search is for Ethanol E10 and Unleaded U91. In Tasmania by default search is for Unleaded U91.
 
@@ -143,7 +143,7 @@ This also provides a cleanup path for an existing location that no longer contai
 
 # Data updates
 
-The **NSW Fuel Check** integration polls data from the API twiced a day by default.
+The **NSW Fuel Check** integration polls data from the API twice a day by default.
 
 # Known limitations
 
@@ -159,7 +159,7 @@ Selecting less common fuel types may produce unexpected results, e.g. NSW statio
 
 #### Description
 
-Most lovelace cards do not support the required additional attributes which hold the station name.
+Most Lovelace cards do not support the required additional attributes which hold the station name.
 
 #### Resolution
 
@@ -169,7 +169,7 @@ Use a tile card as described under **Cheapest Stations** above.
 
 #### Description
 
-No price is shown, only unavailable for the 2nd cheapest sensor.
+No price is shown, only unavailable for the second-cheapest sensor.
 
 #### Resolution
 
@@ -185,7 +185,7 @@ Your stations list is missing stations you expected to see.
 
 #### Resolution
 
-This can be for a number of reasons. For example you searched to U91 but the station does not stock U91. Use **Reconfigure** and try different fuel types and locations. Try using different locations and radius settings to get all the stations you want. If you are still not seeing what you want, see "I want to know the cheapest price close to my usual routes" below. You can also turn on debugging as described in [the readme](./README.md) and check the logs for errors and details of the parameters sent to NSW Fuel Check.
+This can be for a number of reasons. For example, you searched for U91 but the station does not stock U91. Use **Reconfigure** and try different fuel types and locations. Try using different locations and radius settings to get all the stations you want. If you are still not seeing what you want, see "I want to know the cheapest price close to my usual routes" below. You can also turn on debugging as described in [the readme](./README.md) and check the logs for errors and details of the parameters sent to NSW Fuel Check.
 
 ## How do I remove a station or fuel type I no longer want?
 
@@ -206,7 +206,7 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 #### Resolution (Advanced)
 
 1. This solution requires comfort with editing configuration.yaml.
-2. Use the **Reconfigue** option with a small, say 5Km, radius to create multiple nicknames along your route(s).  Select just 1 station.
+2. Use the **Reconfigure** option with a small, say 5 km, radius to create multiple nicknames along your route(s).  Select just 1 station.
 3. Edit your configuration.yaml and create a template sensor similar to [this example](./example_template_sensor.yaml).  You will of course need to change the sensor names to match yours or get your favorite AI to do it for you.
 4. Restart HA.
 5. Add the template sensor to your dashboard.  You can find example cards like the below using the template sensor [here](./example_card_template_sensor.yaml).
@@ -214,11 +214,11 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 
 ![templatesensor](./images/example_card_template_sensor.png)
 
-## I am a Diesel/Premiun Petrol user, how do I find the cheapest?
+## I am a Diesel/Premium Petrol user, how do I find the cheapest?
 
 #### Description
 
-By default the cheapest sensors search for E10/U91.  Earlier releases only supported E10/U91 requiring an upgrade in HACS. Previous workarounds were limited to a finite set of chosen stations, whereas you will now see the cheapest stations found by NSW Fuel Check.
+By default the cheapest sensors search for E10/U91.  Earlier releases only supported E10/U91 and required an upgrade in HACS. Previous workarounds were limited to a finite set of chosen stations, whereas you will now see the cheapest stations found by NSW Fuel Check.
 
 #### Resolution
 
