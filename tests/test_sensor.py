@@ -97,9 +97,11 @@ async def test_async_setup_entry_creates_entities(
     def _add_entities(new_entities) -> None:
         entities.extend(new_entities)
 
-    with patch.object(coordinator, "async_config_entry_first_refresh", new=AsyncMock()):
+    refresh = AsyncMock()
+    with patch.object(coordinator, "async_config_entry_first_refresh", new=refresh):
         await async_setup_entry(hass, mock_config_entry, _add_entities)
 
+    refresh.assert_not_awaited()
     assert entities
     assert any(isinstance(e, FuelPriceSensor) for e in entities)
     assert any(isinstance(e, CheapestFuelPriceSensor) for e in entities)
@@ -150,6 +152,28 @@ def test_create_favorite_station_sensors(coordinator) -> None:
     assert isinstance(sensor, FuelPriceSensor)
     assert sensor.device_info["name"] == "Home"
     assert sensor.icon == "mdi:gas-station"
+
+
+def test_favorite_sensor_unique_ids_include_nickname(coordinator) -> None:
+    """Favorite sensors for the same station are unique per nickname."""
+    station = {
+        "station_code": 111,
+        "au_state": "NSW",
+        "station_name": "Shared Station",
+        "fuel_types": ["U91"],
+    }
+    nicknames = {
+        "Home": {"stations": [station]},
+        "Work": {"stations": [station]},
+    }
+
+    sensors = create_favorite_station_sensors(coordinator, nicknames)
+
+    assert len(sensors) == 2
+    assert {sensor.unique_id for sensor in sensors} == {
+        f"{DOMAIN}_Home_111_NSW_U91",
+        f"{DOMAIN}_Work_111_NSW_U91",
+    }
 
 
 async def test_favorite_sensor_native_value(coordinator, nicknames_home_only) -> None:

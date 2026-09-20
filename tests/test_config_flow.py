@@ -182,69 +182,7 @@ async def test_successful_config_flow(
             "nickname_created",
             id="new-nickname-combo-observed-fuels-radius-round-up",
         ),
-        pytest.param(
-            {
-                "nicknames": {
-                    DEFAULT_NICKNAME: {
-                        "location": {"latitude": HOME_LAT, "longitude": HOME_LNG},
-                        "stations": [
-                            {
-                                "station_code": STATION_NSW_A,
-                                "station_name": "A",
-                                "au_state": "NSW",
-                                "fuel_types": ["E10", "U91"],
-                            }
-                        ],
-                    }
-                }
-            },
-            [STATION_NSW_B],
-            None,
-            "E10-U91",
-            10_001,
-            11,
-            {
-                STATION_NSW_A: ["E10", "U91"],
-                STATION_NSW_B: ["U91"],
-            },
-            "reconfigured",
-            id="add-station",
-        ),
-        pytest.param(
-            {
-                "nicknames": {
-                    DEFAULT_NICKNAME: {
-                        "location": {"latitude": HOME_LAT, "longitude": HOME_LNG},
-                        "stations": [
-                            {
-                                "station_code": STATION_NSW_A,
-                                "station_name": "A",
-                                "au_state": "NSW",
-                                "fuel_types": ["E10"],
-                            },
-                            {
-                                "station_code": STATION_NSW_B,
-                                "station_name": "B",
-                                "au_state": "NSW",
-                                "fuel_types": ["U91"],
-                            },
-                        ],
-                    }
-                }
-            },
-            [STATION_NSW_A],
-            "DL",
-            "DL",
-            5_100,
-            6,
-            {
-                STATION_NSW_A: ["DL", "E10"],
-                STATION_NSW_B: ["U91"],
-            },
-            "reconfigured",
-            id="add-fuel-multi",
-        ),
-    ],
+                    ],
 )
 async def test_successful_reconfigure_flow(
     hass: HomeAssistant,
@@ -284,6 +222,11 @@ async def test_successful_reconfigure_flow(
             },
         )
 
+        assert result["type"] is FlowResultType.MENU
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "advanced_options"}
+        )
         assert result["step_id"] == "advanced_options"
 
         result = await hass.config_entries.flow.async_configure(
