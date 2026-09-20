@@ -653,37 +653,37 @@ async def test_manage_station_removal_is_nickname_scoped(
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={
-                "source": config_entries.SOURCE_RECONFIGURE,
-                "entry_id": entry.entry_id,
-            },
-        )
-        assert result["type"] is FlowResultType.MENU
-        assert result["step_id"] == "reconfigure"
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "reconfigure"
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "manage_stations"}
-        )
-        assert result["step_id"] == "manage_stations"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "manage_stations"}
+    )
+    assert result["step_id"] == "manage_stations"
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_NICKNAME: "Home"}
-        )
-        assert result["step_id"] == "manage_station"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_NICKNAME: "Home"}
+    )
+    assert result["step_id"] == "manage_station"
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
-        )
-        assert result["step_id"] == "edit_station"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
+    )
+    assert result["step_id"] == "edit_station"
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                CONF_STATION_FUEL_TYPES: [],
-                "remove_station": True,
-            },
-        )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_STATION_FUEL_TYPES: [],
+            "remove_station": True,
+        },
+    )
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "manage_station"
@@ -732,28 +732,28 @@ async def test_manage_station_edits_fuels_without_removing_station(
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={
-                "source": config_entries.SOURCE_RECONFIGURE,
-                "entry_id": entry.entry_id,
-            },
-        )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "manage_stations"}
-        )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_NICKNAME: "Home"}
-        )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
-        )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                CONF_STATION_FUEL_TYPES: ["U91"],
-                "remove_station": False,
-            },
-        )
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "manage_stations"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_NICKNAME: "Home"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_STATION_CODE: str(STATION_NSW_A)}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_STATION_FUEL_TYPES: ["U91"],
+            "remove_station": False,
+        },
+    )
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "manage_station"
@@ -1051,36 +1051,36 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={
-                "source": config_entries.SOURCE_RECONFIGURE,
-                "entry_id": entry.entry_id,
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    assert result["type"] is FlowResultType.MENU
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "edit_location"}
+    )
+    assert result["step_id"] == "edit_location"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_NICKNAME: "Home"}
+    )
+    assert result["step_id"] == "edit_location_settings"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_LOCATION: {
+                CONF_LATITUDE: HOME_LAT,
+                CONF_LONGITUDE: HOME_LNG,
+                CONF_RADIUS_M: 15_500,
             },
-        )
-        assert result["type"] is FlowResultType.MENU
-
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "edit_location"}
-        )
-        assert result["step_id"] == "edit_location"
-
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_NICKNAME: "Home"}
-        )
-        assert result["step_id"] == "edit_location_settings"
-
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                CONF_LOCATION: {
-                    CONF_LATITUDE: HOME_LAT,
-                    CONF_LONGITUDE: HOME_LNG,
-                    CONF_RADIUS_M: 15_500,
-                },
-                CONF_FUEL_TYPE: "P95",
-                CONF_EXCLUDE_STRING: "Members only",
-            },
-        )
+            CONF_FUEL_TYPE: "P95",
+            CONF_EXCLUDE_STRING: "Members only",
+        },
+    )
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "location_updated"
