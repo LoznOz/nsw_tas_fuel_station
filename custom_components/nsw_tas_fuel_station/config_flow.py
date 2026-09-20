@@ -15,7 +15,8 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, UnitOfLength
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -69,6 +70,7 @@ from .const import (
 from .coordinator import state_default_fuel
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
     from nsw_tas_fuel.client import StationPrice
 
 _LOGGER = logging.getLogger(__name__)
