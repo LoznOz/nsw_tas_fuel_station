@@ -32,9 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR]
 
 
-async def async_migrate_entry(
-    hass: HomeAssistant, entry: NSWFuelConfigEntry
-) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, entry: NSWFuelConfigEntry) -> bool:
     """Migrate favorite sensor unique IDs to include their nickname."""
     _LOGGER.debug("Migrating config entry from version %s", entry.version)
 
@@ -65,9 +63,7 @@ async def async_migrate_entry(
                     continue
 
                 for fuel_type in station.get(CONF_STATION_FUEL_TYPES, []):
-                    old_unique_id = (
-                        f"{DOMAIN}_{station_code}_{au_state}_{fuel_type}"
-                    )
+                    old_unique_id = f"{DOMAIN}_{station_code}_{au_state}_{fuel_type}"
                     new_unique_id = (
                         f"{DOMAIN}_{nickname}_{station_code}_{au_state}_{fuel_type}"
                     )
