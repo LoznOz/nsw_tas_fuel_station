@@ -28,7 +28,7 @@
       "nickname_already_exists": "That location nickname already exists. Use Add station to existing location, Edit existing location settings, or Manage configured stations instead."
     },
     "step": {
-      "advanced_options": {
+      "add_nickname": {
         "data": {
           "fuel_type": "Select the fuel type used to search for the initial station(s) and for the cheapest sensors.",
           "location": "Select a location",
@@ -57,7 +57,7 @@
         "title": "Reconfigure NSW Fuel Check",
         "description": "Choose whether to add a new location, add stations to an existing location, edit an existing location, manage configured stations, or delete a location.",
         "menu_options": {
-          "advanced_options": "Add new location",
+          "add_nickname": "Add new location",
           "edit_location": "Edit existing location settings",
           "manage_stations": "Manage configured stations",
           "delete_location": "Delete location",
