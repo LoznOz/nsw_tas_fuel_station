@@ -12,7 +12,8 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from nsw_tas_fuel import NSWFuelApiClientAuthError, NSWFuelApiClientError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
