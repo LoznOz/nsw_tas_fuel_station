@@ -1243,13 +1243,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         if selected_radius_km is None:
             selected_radius_km = self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
 
-        if user_input is not None and CONF_EXCLUDE_STRING in user_input:
-            exclude_string = user_input[CONF_EXCLUDE_STRING]
-        else:
-            exclude_string = existing_nickname.get(
-                CONF_EXCLUDE_STRING,
-                self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
-            )
 
         # The selector stores radius inside CONF_LOCATION in meters. If the current
         # form data does not already include that nested value, derive it from the
@@ -1293,10 +1286,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         mode=SelectSelectorMode.DROPDOWN,
                     )
                 ),
-                vol.Optional(
-                    CONF_EXCLUDE_STRING,
-                    description={"suggested_value": exclude_string},
-                ): TextSelector(),
             }
         )
 
