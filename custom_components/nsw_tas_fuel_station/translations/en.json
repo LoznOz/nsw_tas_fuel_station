@@ -30,12 +30,12 @@
     "step": {
       "advanced_options": {
         "data": {
-          "fuel_type": "To search for a station with a specific fuel, select from the dropdown. This setting will also determine the fuels searched for the cheapest sensors.",
+          "fuel_type": "Select the fuel type used to search for the initial station(s) and for the cheapest sensors.",
           "location": "Select a location",
           "nickname": "Location nickname",
           "exclude_string": "Optionally enter text to exclude station names containing the text from the cheapest sensors, e.g. \"Members only\"."
         },
-        "description": "Accept the \"Home\" location nickname or choose a new name such as \"Work\" to group fuel stations by nickname/location.\n\nYou can create multiple nicknames/locations by using \"Reconfigure\" on the integration page and choosing a new nickname here.\nTo add stations to an existing nickname/location, just enter the nickname.\nTo create a trip e.g. \"Trip to work\" use the same nickname and multiple locations.\nTo add a fuel type to existing stations, select the fuel here and the station on the next screen.\n\nFor each nickname/location two \"cheapest\" sensors will be created. Change the fuel type below to set or change the fuel type searched for each nickname, for example \"Premium Unleaded 95/98\" will find the cheapest U95 or U98 for the radius of the nickname.\nTo exclude stations from the cheapest sensors, enter text to exclude station names containing the text, e.g. \"Members only\".",
+        "description": "Create a new nickname/location and select its initial station(s). If that nickname/location already exists, use Add station to existing location or the other Reconfigure management options instead.\n\nFor each nickname/location two \"cheapest\" sensors are created. The fuel type selected here sets the initial cheapest-fuel search for this new nickname/location.",
         "title": "Advanced Selection"
       },
       "station_select": {
@@ -73,7 +73,7 @@
       },
       "manage_station": {
         "title": "Select configured station",
-        "description": "Choose a configured station to edit or remove.",
+        "description": "Choose a configured station to edit or remove. After a successful change, select another station to continue managing this nickname/location, or close Reconfigure when finished.",
         "data": {
           "station_code": "Configured station"
         }
@@ -121,7 +121,7 @@
       },
       "add_station_existing": {
         "title": "Add station to existing location",
-        "description": "Choose the existing nickname/location that should receive the new station. The displayed name may be a Home Assistant device name; the integration will keep the correct stored nickname automatically.",
+        "description": "Choose the existing nickname/location that should receive the new station.",
         "data": {
           "nickname": "Existing location"
         }

@@ -15,7 +15,8 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, UnitOfLength
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -69,6 +70,7 @@ from .const import (
 from .coordinator import state_default_fuel
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
     from nsw_tas_fuel.client import StationPrice
 
 _LOGGER = logging.getLogger(__name__)
@@ -422,9 +424,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             except ValueError as err:
                 errors["base"] = str(err)
             else:
-                radius_meters = location.get(
-                    CONF_RADIUS_M, DEFAULT_RADIUS_KM * 1000
-                )
+                radius_meters = location.get(CONF_RADIUS_M, DEFAULT_RADIUS_KM * 1000)
                 radius_km = max(
                     1,
                     math.ceil(
@@ -456,9 +456,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_RADIUS_KM: radius_km,
                     }
                 )
-                errors = await self._get_station_list(
-                    lat, lon, radius_km, fuel_type
-                )
+                errors = await self._get_station_list(lat, lon, radius_km, fuel_type)
 
             if not errors and not self._nearby_station_prices:
                 errors["base"] = "no_stations"
@@ -570,9 +568,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             except ValueError as err:
                 errors["base"] = str(err)
             else:
-                radius_meters = location.get(
-                    CONF_RADIUS_M, DEFAULT_RADIUS_KM * 1000
-                )
+                radius_meters = location.get(CONF_RADIUS_M, DEFAULT_RADIUS_KM * 1000)
                 radius_km = max(
                     1,
                     math.ceil(
@@ -742,9 +738,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._config_entry,
             self._managed_nickname,
         )
-        self.hass.config_entries.async_update_entry(
-            self._config_entry, data=new_data
-        )
+        self.hass.config_entries.async_update_entry(self._config_entry, data=new_data)
         return self.async_abort(reason="location_removed")
 
     async def async_step_manage_stations(
@@ -887,20 +881,13 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "select_fuel_or_remove_station"},
                 )
 
-            if (
-                remove_station
-                and len(nickname_data.get("stations", [])) == 1
-            ):
+            if remove_station and len(nickname_data.get("stations", [])) == 1:
                 return await self.async_step_confirm_remove_empty_location()
 
             removed_fuels = (
                 configured_fuels
                 if remove_station
-                else [
-                    fuel
-                    for fuel in configured_fuels
-                    if fuel not in selected_fuels
-                ]
+                else [fuel for fuel in configured_fuels if fuel not in selected_fuels]
             )
             new_data = _update_configured_station(
                 self._config_entry.data,
@@ -930,9 +917,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="edit_station",
-            data_schema=self._build_edit_station_schema(
-                fuel_options, configured_fuels
-            ),
+            data_schema=self._build_edit_station_schema(fuel_options, configured_fuels),
         )
 
     async def async_step_confirm_remove_empty_location(
@@ -956,9 +941,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._config_entry,
             self._managed_nickname,
         )
-        self.hass.config_entries.async_update_entry(
-            self._config_entry, data=new_data
-        )
+        self.hass.config_entries.async_update_entry(self._config_entry, data=new_data)
         return self.async_abort(reason="location_removed")
 
     def _nickname_label(self, nickname: str) -> str:
@@ -979,9 +962,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             return device.name
         return nickname
 
-    def _nickname_options(
-        self, nicknames: Mapping[str, Any]
-    ) -> list[SelectOptionDict]:
+    def _nickname_options(self, nicknames: Mapping[str, Any]) -> list[SelectOptionDict]:
         """Return nickname options labelled with the HA device display name."""
         return [
             SelectOptionDict(value=nickname, label=self._nickname_label(nickname))
@@ -1144,9 +1125,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         nickname = user_input.get(CONF_NICKNAME)
         if not nickname or not re.match(r"^[A-Za-z0-9_ -]+$", nickname):
             errors["nickname"] = "invalid_nickname"
-        elif (
-            self._config_entry is not None
-            and nickname in self._config_entry.data.get("nicknames", {})
+        elif self._config_entry is not None and nickname in self._config_entry.data.get(
+            "nicknames", {}
         ):
             errors["nickname"] = "nickname_already_exists"
 
@@ -1263,14 +1243,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         if selected_radius_km is None:
             selected_radius_km = self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
 
-        if user_input is not None and CONF_EXCLUDE_STRING in user_input:
-            exclude_string = user_input[CONF_EXCLUDE_STRING]
-        else:
-            exclude_string = existing_nickname.get(
-                CONF_EXCLUDE_STRING,
-                self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
-            )
-
         # The selector stores radius inside CONF_LOCATION in meters. If the current
         # form data does not already include that nested value, derive it from the
         # saved nickname radius in km for display.
@@ -1313,10 +1285,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                         mode=SelectSelectorMode.DROPDOWN,
                     )
                 ),
-                vol.Optional(
-                    CONF_EXCLUDE_STRING,
-                    description={"suggested_value": exclude_string},
-                ): TextSelector(),
             }
         )
 
@@ -1578,10 +1546,7 @@ def _remove_station_entities(
     ):
         if entity_entry.device_id != device_id:
             continue
-        if any(
-            entity_entry.unique_id.endswith(suffix)
-            for suffix in removed_suffixes
-        ):
+        if any(entity_entry.unique_id.endswith(suffix) for suffix in removed_suffixes):
             entity_registry.async_remove(entity_entry.entity_id)
 
 
