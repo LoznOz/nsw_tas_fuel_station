@@ -1243,7 +1243,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         if selected_radius_km is None:
             selected_radius_km = self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
 
-
         # The selector stores radius inside CONF_LOCATION in meters. If the current
         # form data does not already include that nested value, derive it from the
         # saved nickname radius in km for display.
