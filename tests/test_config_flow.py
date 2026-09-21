@@ -1090,7 +1090,6 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     assert len(home["stations"]) == 1
 
 
-
 async def test_edit_location_saves_exclusion_text(
     hass: HomeAssistant,
 ) -> None:
