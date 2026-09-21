@@ -1090,6 +1090,71 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     assert len(home["stations"]) == 1
 
 
+
+async def test_edit_location_saves_exclusion_text(
+    hass: HomeAssistant,
+) -> None:
+    """Editing location settings saves cheapest-station exclusion text."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "",
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        },
+                    ],
+                }
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "edit_location"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_NICKNAME: "Home"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_LOCATION: {
+                CONF_LATITUDE: HOME_LAT,
+                CONF_LONGITUDE: HOME_LNG,
+                CONF_RADIUS_M: 10_000,
+            },
+            CONF_FUEL_TYPE: "U91",
+            CONF_EXCLUDE_STRING: "Ampol",
+        },
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "location_updated"
+    assert entry.data["nicknames"]["Home"][CONF_EXCLUDE_STRING] == "Ampol"
+
+
 async def test_last_station_requires_confirmation_then_removes_location(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
