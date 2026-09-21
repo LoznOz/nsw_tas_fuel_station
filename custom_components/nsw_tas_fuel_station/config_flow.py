@@ -247,7 +247,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             for code in selected_stations
         ]
 
-        # Reconfigure flow: add nickname, add stations to a nickname, add fuel to stations
+        # Reconfigure flow: create a nickname/location or add stations/fuels.
         if self._config_entry is not None:
             existing_config_entry = self._config_entry.data
             existing_nicknames = existing_config_entry.get("nicknames", {})
@@ -315,8 +315,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Reconfigure an existing config entry.
 
-        Supports adding a nickname/location, adding a station to a nickname,
-        adding a fuel to existing stations.
+        Show the management menu for an existing config entry.
         """
 
         self._config_entry = self.hass.config_entries.async_get_entry(
@@ -606,14 +605,14 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                             exclude_string = user_input.get(
                                 CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
                             )
-                            matching = [
+                            matching_station_prices = [
                                 station_price
                                 for station_price in nearby
                                 if not exclude_string
                                 or exclude_string.lower()
                                 not in station_price.station.name.lower()
                             ]
-                            if not matching:
+                            if not matching_station_prices:
                                 errors["base"] = "no_prices_for_location"
 
             if not errors:
@@ -756,14 +755,14 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._managed_nickname = cast(str, user_input[CONF_NICKNAME])
             return await self.async_step_manage_station()
 
-        options = self._nickname_options(nicknames)
+        nickname_options = self._nickname_options(nicknames)
         return self.async_show_form(
             step_id="manage_stations",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_NICKNAME): SelectSelector(
                         SelectSelectorConfig(
-                            options=options,
+                            options=nickname_options,
                             multiple=False,
                             sort=False,
                             mode=SelectSelectorMode.DROPDOWN,
@@ -792,7 +791,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._managed_available_fuels = None
             return await self.async_step_edit_station()
 
-        options = [
+        station_options = [
             SelectOptionDict(
                 value=str(station[CONF_STATION_CODE]),
                 label=f"{station[CONF_STATION_NAME]} ({station[CONF_STATION_CODE]})",
@@ -805,7 +804,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_STATION_CODE): SelectSelector(
                         SelectSelectorConfig(
-                            options=options,
+                            options=station_options,
                             multiple=False,
                             sort=False,
                             mode=SelectSelectorMode.DROPDOWN,
@@ -831,9 +830,9 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         station = next(
             (
-                item
-                for item in nickname_data.get("stations", [])
-                if item[CONF_STATION_CODE] == self._managed_station_code
+                configured_station
+                for configured_station in nickname_data.get("stations", [])
+                if configured_station[CONF_STATION_CODE] == self._managed_station_code
             ),
             None,
         )
@@ -1187,11 +1186,11 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> vol.Schema:
         """Build the form for adding a new nickname/location."""
 
-        user = user_input or {}
+        form_values = user_input or {}
         existing_nickname: dict[str, Any] = {}
 
         # Set nickname keeping any invalid nicknames for user correction
-        nickname = user.get(
+        nickname = form_values.get(
             CONF_NICKNAME,
             self._flow_data.get(CONF_NICKNAME, DEFAULT_NICKNAME),
         )
@@ -1204,7 +1203,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             "longitude": getattr(self.hass.config, "longitude", None),
         }
         location_source = (
-            user.get(CONF_LOCATION)
+            form_values.get(CONF_LOCATION)
             or existing_nickname.get(CONF_LOCATION)
             or self._flow_data.get(CONF_LOCATION)
             or {}
@@ -1225,7 +1224,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         valid_fuel_codes = {code for code, _name in fuel_types}
 
         selected_fuel = (
-            user.get(CONF_FUEL_TYPE)
+            form_values.get(CONF_FUEL_TYPE)
             or existing_nickname.get(CONF_CHEAPEST_FUEL_TYPE)
             or self._flow_data.get(CONF_FUEL_TYPE)
             or suggested_fuel
