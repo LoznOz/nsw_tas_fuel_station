@@ -161,8 +161,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             _LOGGER.warning("Invalid HA Home location: %s", err)
 
             return self.async_show_form(
-                step_id="advanced_options",
-                data_schema=self._build_advanced_options_schema(
+                step_id="add_nickname",
+                data_schema=self._build_add_nickname_schema(
                     self._last_form or self._flow_data
                 ),
                 errors=errors,
@@ -200,8 +200,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         if not self._nearby_station_prices:
             errors["base"] = "no_stations"
             return self.async_show_form(
-                step_id="advanced_options",
-                data_schema=self._build_advanced_options_schema(self._flow_data),
+                step_id="add_nickname",
+                data_schema=self._build_add_nickname_schema(self._flow_data),
                 errors=errors,
             )
 
@@ -347,12 +347,12 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         if user_input is not None:
-            return await self.async_step_advanced_options(user_input)
+            return await self.async_step_add_nickname(user_input)
 
         return self.async_show_menu(
             step_id="reconfigure",
             menu_options=[
-                "advanced_options",
+                "add_nickname",
                 "add_station_existing",
                 "edit_location",
                 "manage_stations",
@@ -618,14 +618,14 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 new_data = copy.deepcopy(dict(self._config_entry.data))
-                block = new_data["nicknames"][self._managed_nickname]
-                block[CONF_LOCATION] = {
+                nickname_data_to_update = new_data["nicknames"][self._managed_nickname]
+                nickname_data_to_update[CONF_LOCATION] = {
                     CONF_LATITUDE: lat,
                     CONF_LONGITUDE: lon,
                 }
-                block[CONF_RADIUS_KM] = radius_km
-                block[CONF_CHEAPEST_FUEL_TYPE] = selected_fuel
-                block[CONF_EXCLUDE_STRING] = user_input.get(
+                nickname_data_to_update[CONF_RADIUS_KM] = radius_km
+                nickname_data_to_update[CONF_CHEAPEST_FUEL_TYPE] = selected_fuel
+                nickname_data_to_update[CONF_EXCLUDE_STRING] = user_input.get(
                     CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING
                 )
                 self.hass.config_entries.async_update_entry(
@@ -1102,22 +1102,17 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             }
         )
 
-    async def async_step_advanced_options(
+    async def async_step_add_nickname(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Show reconfigure/advanced options step.
-
-        Choose non-default or additional nickname,
-        change location, select non-default fuel,
-        exclude stations from cheapest.
-        """
+        """Add a new nickname/location and choose its initial search settings."""
 
         errors: dict[str, str] = {}
 
         if user_input is None:
             return self.async_show_form(
-                step_id="advanced_options",
-                data_schema=self._build_advanced_options_schema(self._flow_data),
+                step_id="add_nickname",
+                data_schema=self._build_add_nickname_schema(self._flow_data),
                 errors=errors,
             )
 
@@ -1150,8 +1145,8 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if errors:
             return self.async_show_form(
-                step_id="advanced_options",
-                data_schema=self._build_advanced_options_schema(user_input),
+                step_id="add_nickname",
+                data_schema=self._build_add_nickname_schema(user_input),
                 errors=errors,
             )
 
@@ -1171,26 +1166,26 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
         errors = await self._get_station_list(lat, lon, radius_km, fuel_type)
         if errors:
             return self.async_show_form(
-                step_id="advanced_options",
-                data_schema=self._build_advanced_options_schema(user_input),
+                step_id="add_nickname",
+                data_schema=self._build_add_nickname_schema(user_input),
                 errors=errors,
             )
 
         if not self._nearby_station_prices:
             errors["base"] = "no_stations"
             return self.async_show_form(
-                step_id="advanced_options",
-                data_schema=self._build_advanced_options_schema(user_input),
+                step_id="add_nickname",
+                data_schema=self._build_add_nickname_schema(user_input),
                 errors=errors,
             )
 
         return await self.async_step_station_select()
 
-    def _build_advanced_options_schema(
+    def _build_add_nickname_schema(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> vol.Schema:
-        """Build UI schema for advanced options: nickname, location, fuel type."""
+        """Build the form for adding a new nickname/location."""
 
         user = user_input or {}
         existing_nickname: dict[str, Any] = {}
