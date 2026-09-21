@@ -66,7 +66,7 @@ def test_validate_location_rejects_out_of_bounds_coordinate() -> None:
         )
 
 
-async def test_invalid_home_location_uses_advanced_options(
+async def test_invalid_home_location_uses_add_nickname(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
 ) -> None:
@@ -78,7 +78,7 @@ async def test_invalid_home_location_uses_advanced_options(
         result = await _start_flow_and_submit_creds(hass, CLIENT_ID, CLIENT_SECRET)
 
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "advanced_options"
+    assert result["step_id"] == "add_nickname"
     assert result["errors"]["base"] == "invalid_coordinates"
     mock_api_client.get_fuel_prices_within_radius.assert_not_awaited()
 
@@ -226,9 +226,9 @@ async def test_successful_reconfigure_flow(
         assert result["type"] is FlowResultType.MENU
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "advanced_options"}
+            result["flow_id"], {"next_step_id": "add_nickname"}
         )
-        assert result["step_id"] == "advanced_options"
+        assert result["step_id"] == "add_nickname"
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -322,7 +322,7 @@ async def test_no_station_selected_error(
         assert "no_stations" in result["errors"]["base"]
 
 
-async def test_advanced_options_no_station_results(
+async def test_add_nickname_no_station_results(
     hass: HomeAssistant,
 ) -> None:
     """Test advanced options returns to same step when API returns no stations."""
@@ -365,7 +365,7 @@ async def test_advanced_options_no_station_results(
                 "entry_id": entry.entry_id,
             },
         )
-        assert result["step_id"] == "advanced_options"
+        assert result["step_id"] == "add_nickname"
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -377,7 +377,7 @@ async def test_advanced_options_no_station_results(
         )
 
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "advanced_options"
+    assert result["step_id"] == "add_nickname"
     assert result["errors"]["base"] == "no_stations"
 
 
@@ -418,7 +418,7 @@ async def test_advanced_options_no_station_results(
             "user",
             False,
         ),
-        (None, "", "no_stations", "advanced_options", True),
+        (None, "", "no_stations", "add_nickname", True),
     ],
     ids=[
         "auth-invalid-credentials",
@@ -511,7 +511,7 @@ async def test_build_user_schema_existing_entry(
         ),
     ],
 )
-async def test_advanced_options_preserves_user_location_and_fuel_on_error(
+async def test_add_nickname_preserves_user_location_and_fuel_on_error(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
     nickname: str,
@@ -558,7 +558,7 @@ async def test_advanced_options_preserves_user_location_and_fuel_on_error(
                 "entry_id": entry.entry_id,
             },
         )
-        assert result["step_id"] == "advanced_options"
+        assert result["step_id"] == "add_nickname"
 
         user_location = {"latitude": HOBART_LAT, "longitude": HOBART_LNG}
         user_fuel = "U91"
@@ -573,7 +573,7 @@ async def test_advanced_options_preserves_user_location_and_fuel_on_error(
         )
 
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "advanced_options"
+    assert result["step_id"] == "add_nickname"
     if expected_error is not None:
         assert result["errors"]["base"] == expected_error
 
