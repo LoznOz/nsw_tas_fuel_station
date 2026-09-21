@@ -177,6 +177,40 @@ In some locations the NSW Fuel Check API may only return 1 station.  Try changin
 
 If a sensor consistently shows as unavailable you can disable the sensor using [Settings > Devices & services > Entities ](https://www.home-assistant.io/docs/configuration/customizing-devices/).
 
+## I want prices to update more frequently than twice a day
+
+#### Description
+
+Normally by default the NSW Fuel Check API is called every 12 hours.  Some users may prefer a more frequent update, such as just before leaving for work.
+
+#### Resolution
+
+Asking Home Assistant to update *any one* sensor will cause *all* favorite station sensors and the *all* cheapest sensors to update.  A time based sensor example is below.
+
+```
+alias: Update Fuel Prices
+description: ''
+triggers:
+  - trigger: time
+    at: '08:00:00'
+    weekday:
+      - mon
+      - tue
+      - wed
+      - thu
+      - fri
+conditions: []
+actions:
+  - action: homeassistant.update_entity
+    metadata: {}
+    data:
+      entity_id:
+        - sensor.home_cheapest_home_1
+mode: single
+```
+
+**Caution** using an hourly or more frequent trigger or, say, a trigger such as leaving your home zone, may result in unnecessary API calls and you running out of your monthly free API call allowance.
+
 ## I only see one station / I am not seeing the stations I expected in the select stations list
 
 #### Description
