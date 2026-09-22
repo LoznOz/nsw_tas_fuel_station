@@ -1074,28 +1074,28 @@ async def test_edit_existing_location_updates_settings_without_station_selection
         )
         assert result["type"] is FlowResultType.MENU
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "edit_location"}
-    )
-    assert result["step_id"] == "edit_location"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "edit_location"}
+        )
+        assert result["step_id"] == "edit_location"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_NICKNAME: "Home"}
-    )
-    assert result["step_id"] == "edit_location_settings"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NICKNAME: "Home"}
+        )
+        assert result["step_id"] == "edit_location_settings"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            CONF_LOCATION: {
-                CONF_LATITUDE: HOME_LAT,
-                CONF_LONGITUDE: HOME_LNG,
-                CONF_RADIUS_M: 15_500,
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_LOCATION: {
+                    CONF_LATITUDE: HOME_LAT,
+                    CONF_LONGITUDE: HOME_LNG,
+                    CONF_RADIUS_M: 15_500,
+                },
+                CONF_FUEL_TYPE: "P95",
+                CONF_EXCLUDE_STRING: "Members only",
             },
-            CONF_FUEL_TYPE: "P95",
-            CONF_EXCLUDE_STRING: "Members only",
-        },
-    )
+        )
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "location_updated"
