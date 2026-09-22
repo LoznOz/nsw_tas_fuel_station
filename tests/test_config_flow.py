@@ -228,6 +228,10 @@ async def test_successful_reconfigure_flow(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"next_step_id": "add_nickname"}
         )
+        assert result["step_id"] == "reconfigure"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "add_nickname"}
+        )
         assert result["step_id"] == "add_nickname"
 
         result = await hass.config_entries.flow.async_configure(
@@ -557,6 +561,10 @@ async def test_add_nickname_preserves_user_location_and_fuel_on_error(
                 "source": config_entries.SOURCE_RECONFIGURE,
                 "entry_id": entry.entry_id,
             },
+        )
+        assert result["step_id"] == "reconfigure"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "add_nickname"}
         )
         assert result["step_id"] == "add_nickname"
 
