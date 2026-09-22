@@ -2,17 +2,17 @@
   "config": {
     "abort": {
       "already_configured": "The NSW Fuel Check integration is already set up.",
-      "nickname_created": "Successfully created new nickname/location with selected stations.",
+      "nickname_created": "Successfully created new location/nickname with selected stations.",
       "no_available_stations": "Either you have already configured all nearby stations or try Add Service again with a different location.",
-      "reconfigured": "Successfully added station(s) to existing nickname/location, or fuel to existing station.",
+      "reconfigured": "Successfully added station(s) to existing location/nickname, or fuel to existing station.",
       "no_configured_stations": "There are no configured stations to manage.",
       "station_not_found": "The selected station is no longer configured.",
-      "station_removed": "Successfully removed the selected station.",
+      "station_removed": "Successfully deleted the selected station.",
       "station_updated": "Successfully updated the selected station fuel types.",
-      "no_configured_locations": "There are no configured locations to edit.",
-      "location_updated": "Successfully updated the selected location settings.",
-      "location_removed": "Successfully removed the empty location and its entities.",
-      "stations_added": "Successfully added the selected station(s) to the existing location."
+      "no_configured_nicknames": "There are no configured locations/nicknames to edit.",
+      "nickname_updated": "Successfully updated the selected location/nickname settings.",
+      "nickname_deleted": "Successfully deleted the location/nickname and its sensors.",
+      "stations_added": "Successfully added the selected station(s) to the existing location/nickname."
     },
     "error": {
       "auth": "NSW Fuel API Key or API Secret is wrong.",
@@ -22,21 +22,20 @@
       "no_stations": "Please use the drop down to select at least one station.",
       "sensor_exists": "You have tried to configure an existing sensor for {station} ({fuel}). Choose a different station or fuel type.",
       "unknown": "Unknown error occurred.",
-      "select_fuel_or_remove_station": "Select at least one fuel type, or choose Remove station.",
-      "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location.",
+      "select_fuel_or_remove_station": "Select at least one fuel type, or choose Delete station.",
+      "invalid_fuel_for_location": "The selected cheapest fuel type is not valid for this location/nickname.",
       "no_prices_for_location": "FuelCheck returned no matching prices for this location, search radius and cheapest-fuel selection. Try a different fuel type, increase the search radius, change the location, or adjust the station exclusion text.",
-      "nickname_already_exists": "That location nickname already exists. Use Add station to existing location, Edit existing location settings, or Manage configured stations instead."
+      "nickname_already_exists": "That location/nickname already exists. Use Add station to existing location/nickname, Edit existing location/nickname settings, or Manage configured stations instead."
     },
     "step": {
       "add_nickname": {
         "data": {
           "fuel_type": "Select the fuel type used to search for the initial station(s) and for the cheapest sensors.",
-          "location": "Select a location",
-          "nickname": "Location nickname",
-          "exclude_string": "Optionally enter text to exclude station names containing the text from the cheapest sensors, e.g. \"Members only\"."
+          "location": "Search location and radius",
+          "nickname": "Location/nickname"
         },
-        "description": "Create a new nickname/location and select its initial station(s). If that nickname/location already exists, use Add station to existing location or the other Reconfigure management options instead.\n\nFor each nickname/location two \"cheapest\" sensors are created. The fuel type selected here sets the initial cheapest-fuel search for this new nickname/location.",
-        "title": "Advanced Selection"
+        "description": "Create a new location (e.g. \"Work\") or nickname (e.g. \"Diesel\") and select its initial station(s). Grouping by location/nickname allows you to have multiple \"cheapest\" sensors for different locations or fuel types.\n\nIf the location/nickname already exists, use *Add station to existing location/nickname* or the other reconfigure options instead.\n\nFor each location/nickname two \"cheapest\" sensors are created. The fuel type selected here sets the initial cheapest-fuel search for this new location/nickname.",
+        "title": "Add new location/nickname"
       },
       "station_select": {
         "data": {
@@ -55,80 +54,80 @@
       },
       "reconfigure": {
         "title": "Reconfigure NSW Fuel Check",
-        "description": "Choose whether to add a new location, add stations to an existing location, edit an existing location, manage configured stations, or delete a location.",
+        "description": "Choose whether to add a new location nickname to group your stations, add stations to an existing location, edit an existing location, manage configured stations, or delete a location.",
         "menu_options": {
-          "add_nickname": "Add new location",
-          "edit_location": "Edit existing location settings",
+          "add_nickname": "Add new location/nickname",
+          "edit_nickname": "Edit existing location/nickname settings",
           "manage_stations": "Manage configured stations",
-          "delete_location": "Delete location",
-          "add_station_existing": "Add station to existing location"
+          "delete_nickname": "Delete location/nickname",
+          "add_station_existing": "Add station to existing location/nickname"
         }
       },
       "manage_stations": {
         "title": "Manage configured stations",
-        "description": "Choose the nickname/location whose configured stations you want to manage.",
+        "description": "Choose the location/nickname whose configured stations you want to manage.",
         "data": {
-          "nickname": "Nickname/location"
+          "nickname": "Location/nickname"
         }
       },
       "manage_station": {
         "title": "Select configured station",
-        "description": "Choose a configured station to edit or remove. After a successful change, select another station to continue managing this nickname/location, or close Reconfigure when finished.",
+        "description": "Choose a configured station to edit or delete. After a successful change, select another station to continue managing this location/nickname.\n\nSelect close (x) when finished.",
         "data": {
           "station_code": "Configured station"
         }
       },
       "edit_station": {
-        "title": "Edit station fuels or remove station",
-        "description": "Select the fuel types to keep for this station. Tap × on a selected fuel to remove it, or use Add / change fuel types to add another fuel currently reported by FuelCheck. To remove the whole station from this location, enable Remove station.",
+        "title": "Edit station fuels or delete station",
+        "description": "Select the fuel types to keep for this station. Tap × on a selected fuel to delete it, or use Add / change fuel types to add another fuel currently reported by FuelCheck. To delete the whole station from this location, enable Delete station.",
         "data": {
           "fuel_types": "Add / change fuel types",
-          "remove_station": "Remove station"
+          "remove_station": "Delete station"
         }
       },
-      "edit_location": {
-        "title": "Edit existing location",
-        "description": "Choose the existing nickname/location whose settings you want to change.",
+      "edit_nickname": {
+        "title": "Edit existing location/nickname",
+        "description": "Choose the existing location/nickname whose settings you want to change.",
         "data": {
-          "nickname": "Nickname/location"
+          "nickname": "Location/nickname"
         }
       },
-      "edit_location_settings": {
-        "title": "Edit location settings",
-        "description": "Change the saved location/radius, cheapest-fuel search type, or cheapest-station exclusion text. This does not add or remove favorite stations.",
+      "edit_nickname_settings": {
+        "title": "Edit location/nickname settings",
+        "description": "Change the saved location and/or radius, cheapest-fuel search type, or cheapest-station exclusion text. This does not change favorite stations.",
         "data": {
           "location": "Location and search radius",
           "fuel_type": "Cheapest fuel type",
           "exclude_string": "Exclude station names containing"
         }
       },
-      "confirm_remove_empty_location": {
-        "title": "Remove empty location?",
-        "description": "This is the last configured station for this nickname/location. Removing it will also remove the location device and its cheapest-price entities. Submit to confirm, or close this dialog to cancel.",
+      "confirm_delete_empty_nickname": {
+        "title": "Delete empty location/nickname?",
+        "description": "This is the last configured station for this location/nickname. Deleting it will also delete the location/nickname and its cheapest-price sensors. Submit to confirm, or close (x) this screen to cancel.",
         "data": {}
       },
-      "delete_location": {
-        "title": "Delete location",
-        "description": "Choose the nickname/location to remove. All configured stations and entities belonging to that location will also be removed.",
+      "delete_nickname": {
+        "title": "Delete location/nickname",
+        "description": "Choose the location/nickname to delete. All configured stations and sensors belonging to that location/nickname will also be deleted.",
         "data": {
-          "nickname": "Nickname/location"
+          "nickname": "Location/nickname"
         }
       },
-      "confirm_delete_location": {
+      "confirm_delete_nickname": {
         "title": "Delete {location}?",
-        "description": "This will permanently remove this location, all of its configured favorite-station entities, and its cheapest-price entities. Submit to confirm, or close this dialog to cancel.",
+        "description": "This will permanently delete this location/nickname, all of its configured favorite-station sensors, and its cheapest-price sensors. Submit to confirm or close (x) this screen to cancel.",
         "data": {}
       },
       "add_station_existing": {
-        "title": "Add station to existing location",
-        "description": "Choose the existing nickname/location that should receive the new station.",
+        "title": "Add station to existing location/nickname",
+        "description": "Choose the existing location/nickname that should receive the new station.",
         "data": {
-          "nickname": "Existing location"
+          "nickname": "Existing location/nickname"
         }
       },
       "add_station_search": {
         "title": "Find station to add",
-        "description": "Choose where and how far to search, and the fuel type used to find stations. These search choices are used only to find the station and do not change the existing location's saved cheapest-fuel settings.",
+        "description": "Choose where and how far to search, and the fuel type used to find stations. These search choices are used only to find the station and do not change the existing location/nickname's saved cheapest-fuel settings.",
         "data": {
           "location": "Search location and radius",
           "fuel_type": "Fuel type to find"
