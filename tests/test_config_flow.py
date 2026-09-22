@@ -1030,7 +1030,7 @@ async def test_manage_station_removes_stale_entity_registry_entry(
     assert entity_registry.async_get(entity.entity_id) is None
 
 
-async def test_edit_existing_location_updates_settings_without_station_selection(
+async def test_edit_existing_nickname_updates_settings_without_station_selection(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
 ) -> None:
@@ -1075,14 +1075,14 @@ async def test_edit_existing_location_updates_settings_without_station_selection
         assert result["type"] is FlowResultType.MENU
 
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "edit_location"}
+            result["flow_id"], {"next_step_id": "edit_nickname"}
         )
-        assert result["step_id"] == "edit_location"
+        assert result["step_id"] == "edit_nickname"
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_NICKNAME: "Home"}
         )
-        assert result["step_id"] == "edit_location_settings"
+        assert result["step_id"] == "edit_nickname_settings"
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
@@ -1098,7 +1098,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
         )
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "location_updated"
+    assert result["reason"] == "nickname_updated"
     home = entry.data["nicknames"]["Home"]
     assert home[CONF_RADIUS_KM] == 16
     assert home[CONF_CHEAPEST_FUEL_TYPE] == "DL"
@@ -1106,7 +1106,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     assert len(home["stations"]) == 1
 
 
-async def test_edit_location_saves_exclusion_text(
+async def test_edit_nickname_saves_exclusion_text(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
 ) -> None:
@@ -1149,7 +1149,7 @@ async def test_edit_location_saves_exclusion_text(
             },
         )
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "edit_location"}
+            result["flow_id"], {"next_step_id": "edit_nickname"}
         )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_NICKNAME: "Home"}
@@ -1168,15 +1168,15 @@ async def test_edit_location_saves_exclusion_text(
     )
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "location_updated"
+    assert result["reason"] == "nickname_updated"
     assert entry.data["nicknames"]["Home"][CONF_EXCLUDE_STRING] == "Ampol"
 
 
-async def test_last_station_requires_confirmation_then_removes_location(
+async def test_last_station_requires_confirmation_then_removes_nickname(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
 ) -> None:
-    """Removing a location's final station requires confirmation and removes device."""
+    """Removing a nickname's final station requires confirmation and removes device."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id=CLIENT_ID,
@@ -1261,13 +1261,13 @@ async def test_last_station_requires_confirmation_then_removes_location(
         )
 
         assert result["type"] is FlowResultType.FORM
-        assert result["step_id"] == "confirm_remove_empty_location"
+        assert result["step_id"] == "confirm_delete_empty_nickname"
         assert "Home" in entry.data["nicknames"]
 
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "location_removed"
+    assert result["reason"] == "nickname_deleted"
     assert "Home" not in entry.data["nicknames"]
     assert "Petrol" in entry.data["nicknames"]
     assert entity_registry.async_get(favorite.entity_id) is None
@@ -1275,7 +1275,7 @@ async def test_last_station_requires_confirmation_then_removes_location(
     assert device_registry.async_get(device.id) is None
 
 
-async def test_edit_location_rejects_cheapest_fuel_with_no_prices(
+async def test_edit_nickname_rejects_cheapest_fuel_with_no_prices(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
 ) -> None:
@@ -1320,7 +1320,7 @@ async def test_edit_location_rejects_cheapest_fuel_with_no_prices(
             },
         )
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"next_step_id": "edit_location"}
+            result["flow_id"], {"next_step_id": "edit_nickname"}
         )
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_NICKNAME: "Home"}
@@ -1339,12 +1339,12 @@ async def test_edit_location_rejects_cheapest_fuel_with_no_prices(
         )
 
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "edit_location_settings"
+    assert result["step_id"] == "edit_nickname_settings"
     assert result["errors"]["base"] == "no_prices_for_location"
     assert entry.data == original_data
 
 
-async def test_delete_location_with_no_stations(
+async def test_delete_nickname_with_no_stations(
     hass: HomeAssistant,
 ) -> None:
     """An empty location can still be explicitly deleted."""
@@ -1404,26 +1404,26 @@ async def test_delete_location_with_no_stations(
         },
     )
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "delete_location"}
+        result["flow_id"], {"next_step_id": "delete_nickname"}
     )
-    assert result["step_id"] == "delete_location"
+    assert result["step_id"] == "delete_nickname"
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_NICKNAME: "Empty"}
     )
-    assert result["step_id"] == "confirm_delete_location"
+    assert result["step_id"] == "confirm_delete_nickname"
 
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "location_removed"
+    assert result["reason"] == "nickname_deleted"
     assert "Empty" not in entry.data["nicknames"]
     assert "Petrol" in entry.data["nicknames"]
     assert entity_registry.async_get(cheapest.entity_id) is None
     assert device_registry.async_get(device.id) is None
 
 
-async def test_add_station_to_existing_location_uses_stored_nickname(
+async def test_add_station_to_existing_nickname_uses_stored_nickname(
     hass: HomeAssistant,
     mock_api_client: AsyncMock,
 ) -> None:
