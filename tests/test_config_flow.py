@@ -374,7 +374,7 @@ async def test_add_nickname_no_station_results(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
-                CONF_NICKNAME: DEFAULT_NICKNAME,
+                CONF_NICKNAME: "Hobart",
                 CONF_LOCATION: {"latitude": HOBART_LAT, "longitude": HOBART_LNG},
                 CONF_FUEL_TYPE: "U91",
             },
@@ -508,7 +508,7 @@ async def test_build_user_schema_existing_entry(
         pytest.param("", None, None, id="empty-nickname"),
         pytest.param("bad<>name", None, None, id="invalid-chars-nickname"),
         pytest.param(
-            DEFAULT_NICKNAME,
+            "Hobart",
             NSWFuelApiClientError("Internal server error (500)"),
             "connection",
             id="api-error",
@@ -621,6 +621,7 @@ def get_station_map(entry_data: dict) -> dict[int, list[str]]:
 
 async def test_manage_station_removal_is_nickname_scoped(
     hass: HomeAssistant,
+    mock_api_client: AsyncMock,
 ) -> None:
     """Removing a station from one nickname leaves another nickname untouched."""
     entry = MockConfigEntry(
@@ -661,14 +662,15 @@ async def test_manage_station_removal_is_nickname_scoped(
     )
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_RECONFIGURE,
-            "entry_id": entry.entry_id,
-        },
-    )
-    assert result["type"] is FlowResultType.MENU
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "reconfigure"
 
     result = await hass.config_entries.flow.async_configure(
@@ -709,6 +711,7 @@ async def test_manage_station_removal_is_nickname_scoped(
 
 async def test_manage_station_edits_fuels_without_removing_station(
     hass: HomeAssistant,
+    mock_api_client: AsyncMock,
 ) -> None:
     """Editing fuels replaces only the selected station's configured fuel list."""
     entry = MockConfigEntry(
@@ -739,14 +742,15 @@ async def test_manage_station_edits_fuels_without_removing_station(
     )
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_RECONFIGURE,
-            "entry_id": entry.entry_id,
-        },
-    )
-    result = await hass.config_entries.flow.async_configure(
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "manage_stations"}
     )
     result = await hass.config_entries.flow.async_configure(
@@ -773,6 +777,7 @@ async def test_manage_station_edits_fuels_without_removing_station(
 
 async def test_manage_station_rejects_empty_fuels_without_removal(
     hass: HomeAssistant,
+    mock_api_client: AsyncMock,
 ) -> None:
     """A station cannot be left configured with no fuels accidentally."""
     entry = MockConfigEntry(
@@ -798,14 +803,15 @@ async def test_manage_station_rejects_empty_fuels_without_removal(
     entry.add_to_hass(hass)
     original_data = dict(entry.data)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_RECONFIGURE,
-            "entry_id": entry.entry_id,
-        },
-    )
-    result = await hass.config_entries.flow.async_configure(
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "manage_stations"}
     )
     result = await hass.config_entries.flow.async_configure(
@@ -1026,6 +1032,7 @@ async def test_manage_station_removes_stale_entity_registry_entry(
 
 async def test_edit_existing_location_updates_settings_without_station_selection(
     hass: HomeAssistant,
+    mock_api_client: AsyncMock,
 ) -> None:
     """Existing location settings can be changed without selecting stations."""
     entry = MockConfigEntry(
@@ -1057,14 +1064,15 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     )
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_RECONFIGURE,
-            "entry_id": entry.entry_id,
-        },
-    )
-    assert result["type"] is FlowResultType.MENU
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        assert result["type"] is FlowResultType.MENU
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "edit_location"}
@@ -1100,6 +1108,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
 
 async def test_edit_location_saves_exclusion_text(
     hass: HomeAssistant,
+    mock_api_client: AsyncMock,
 ) -> None:
     """Editing location settings saves cheapest-station exclusion text."""
     entry = MockConfigEntry(
@@ -1131,14 +1140,15 @@ async def test_edit_location_saves_exclusion_text(
     )
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_RECONFIGURE,
-            "entry_id": entry.entry_id,
-        },
-    )
-    result = await hass.config_entries.flow.async_configure(
+    with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+        result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "edit_location"}
     )
     result = await hass.config_entries.flow.async_configure(
