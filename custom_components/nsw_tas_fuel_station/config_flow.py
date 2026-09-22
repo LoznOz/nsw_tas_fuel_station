@@ -1489,13 +1489,12 @@ def _remove_nickname_device_and_entities(
 ) -> None:
     """Remove all entities and the HA device for an empty nickname/location."""
     device_registry = dr.async_get(hass)
-    device_id = dr.async_get_device_id_by_identifier(
-        hass,
-        (DOMAIN, f"location_{nickname}"),
-        config_entry_id=entry.entry_id,
+    device = device_registry.async_get_device(
+        identifiers={(DOMAIN, f"location_{nickname}")}
     )
-    if device_id is None:
+    if device is None:
         return
+    device_id = device.id
 
     entity_registry = er.async_get(hass)
     for entity_entry in er.async_entries_for_config_entry(
@@ -1519,13 +1518,13 @@ def _remove_station_entities(
     if not fuel_types:
         return
 
-    device_id = dr.async_get_device_id_by_identifier(
-        hass,
-        (DOMAIN, f"location_{nickname}"),
-        config_entry_id=entry.entry_id,
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_device(
+        identifiers={(DOMAIN, f"location_{nickname}")}
     )
-    if device_id is None:
+    if device is None:
         return
+    device_id = device.id
 
     entity_registry = er.async_get(hass)
     removed_suffixes = {
