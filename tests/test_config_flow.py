@@ -1092,7 +1092,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
                     CONF_LONGITUDE: HOME_LNG,
                     CONF_RADIUS_M: 15_500,
                 },
-                CONF_FUEL_TYPE: "P95",
+                CONF_FUEL_TYPE: "DL",
                 CONF_EXCLUDE_STRING: "Members only",
             },
         )
@@ -1101,7 +1101,7 @@ async def test_edit_existing_location_updates_settings_without_station_selection
     assert result["reason"] == "location_updated"
     home = entry.data["nicknames"]["Home"]
     assert home[CONF_RADIUS_KM] == 16
-    assert home[CONF_CHEAPEST_FUEL_TYPE] == "P95"
+    assert home[CONF_CHEAPEST_FUEL_TYPE] == "DL"
     assert home[CONF_EXCLUDE_STRING] == "Members only"
     assert len(home["stations"]) == 1
 
