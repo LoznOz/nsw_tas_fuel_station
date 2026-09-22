@@ -751,8 +751,8 @@ async def test_manage_station_edits_fuels_without_removing_station(
             },
         )
         result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "manage_stations"}
-    )
+            result["flow_id"], {"next_step_id": "manage_stations"}
+        )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_NICKNAME: "Home"}
     )
@@ -812,8 +812,8 @@ async def test_manage_station_rejects_empty_fuels_without_removal(
             },
         )
         result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "manage_stations"}
-    )
+            result["flow_id"], {"next_step_id": "manage_stations"}
+        )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_NICKNAME: "Home"}
     )
@@ -1149,8 +1149,8 @@ async def test_edit_location_saves_exclusion_text(
             },
         )
         result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"next_step_id": "edit_location"}
-    )
+            result["flow_id"], {"next_step_id": "edit_location"}
+        )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_NICKNAME: "Home"}
     )
