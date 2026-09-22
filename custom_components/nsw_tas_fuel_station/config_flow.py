@@ -949,12 +949,10 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
             return nickname
 
         device_registry = dr.async_get(self.hass)
-        device_id = dr.async_get_device_id_by_identifier(
-            self.hass,
+        device = device_registry.async_get_device_by_identifier(
             (DOMAIN, f"location_{nickname}"),
-            config_entry_id=self._config_entry.entry_id,
+            self._config_entry.entry_id,
         )
-        device = device_registry.async_get(device_id) if device_id else None
         if device is not None and device.name_by_user:
             return device.name_by_user
         if device is not None and device.name:
