@@ -293,24 +293,6 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
                 return self.async_abort(reason="nickname_created")
 
-            new_config_entry = _add_stations_to_nickname(
-                existing_config_entry,
-                nickname,
-                self._flow_data.get(CONF_LOCATION),
-                stations_config_entry,
-                self._flow_data.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM),
-                self._flow_data.get(CONF_FUEL_TYPE),
-                self._flow_data.get(CONF_EXCLUDE_STRING, DEFAULT_EXCLUDE_STRING),
-            )
-            new_config_entry = _add_fuel_to_stations(
-                new_config_entry, nickname, stations_config_entry
-            )
-
-            self.hass.config_entries.async_update_entry(
-                self._config_entry, data=new_config_entry
-            )
-            return self.async_abort(reason="reconfigured")
-
         # Initial flow, create config entry with default options
         return await self._create_new_config_entry(nickname, selected_stations)
 
