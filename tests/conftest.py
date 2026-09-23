@@ -27,16 +27,19 @@ STATIONS_NSW = [
     {
         "station_code": STATION_NSW_A,
         "station_name": "Ampol Foodary Ampol Foodary Batemans Bay",
+        "station_address": "123 Main St, Batemans Bay, NSW",
         "au_state": "NSW",
     },
     {
         "station_code": STATION_NSW_B,
         "station_name": "Ultra Petroleum Ultra Mogo",
+        "station_address": "456 Elm St, Mogo, NSW",
         "au_state": "NSW",
     },
     {
         "station_code": STATION_NSW_C,
         "station_name": "Shell Merimbula",
+        "station_address": "789 Oak St, Merimbula, NSW",
         "au_state": "NSW",
     },
 ]
@@ -46,6 +49,7 @@ STATIONS_TAS = [
     {
         "station_code": STATION_TAS_E,
         "station_name": "Caltex Launceston",
+        "station_address": "321 Pine St, Launceston, TAS",
         "au_state": "TAS",
     },
 ]

@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_AU_STATE,
     CONF_FUEL_TYPE,
+    CONF_STATION_ADDRESS,
     CONF_STATION_CODE,
     CONF_STATION_FUEL_TYPES,
     CONF_STATION_NAME,
@@ -208,6 +209,7 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
         return {
             CONF_STATION_CODE: station_price[CONF_STATION_CODE],
             CONF_STATION_NAME: station_price[CONF_STATION_NAME],
+            CONF_STATION_ADDRESS: station_price[CONF_STATION_ADDRESS],
             "rank": self._rank,
             CONF_FUEL_TYPE: station_price[CONF_FUEL_TYPE],
             "search_fuel_type": self._search_fuel_type,

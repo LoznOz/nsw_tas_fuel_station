@@ -34,6 +34,7 @@ CONF_RADIUS_M = "radius"
 CONF_RADIUS_KM = "radius_km"
 CONF_SELECTED_FUEL_TYPES = "selected_fuel_types"
 CONF_SELECTED_STATIONS = "selected_station_codes"
+CONF_STATION_ADDRESS = "station_address"
 CONF_STATION_CODE = "station_code"
 CONF_STATION_NAME = "station_name"
 DEFAULT_FUEL_TYPE = "E10-U91"  # Some fuel types in TAS return NSW stations!

@@ -51,6 +51,7 @@ from .const import (
     CONF_RADIUS_KM,
     CONF_RADIUS_M,
     CONF_SELECTED_STATIONS,
+    CONF_STATION_ADDRESS,
     CONF_STATION_CODE,
     CONF_STATION_FUEL_TYPES,
     CONF_STATION_NAME,
@@ -243,6 +244,7 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_STATION_CODE: code,
                 CONF_AU_STATE: self._station_lookup[code][CONF_AU_STATE],
                 CONF_STATION_NAME: self._station_lookup[code][CONF_STATION_NAME],
+                CONF_STATION_ADDRESS: self._station_lookup[code][CONF_STATION_ADDRESS],
                 CONF_STATION_FUEL_TYPES: self._station_lookup[code][
                     CONF_STATION_FUEL_TYPES
                 ],
@@ -1025,6 +1027,9 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                             CONF_STATION_NAME: self._station_lookup[code][
                                 CONF_STATION_NAME
                             ],
+                            CONF_STATION_ADDRESS: self._station_lookup[code][
+                                CONF_STATION_ADDRESS
+                            ],
                             CONF_STATION_FUEL_TYPES: self._station_lookup[code][
                                 CONF_STATION_FUEL_TYPES
                             ],
@@ -1323,12 +1328,12 @@ class NSWFuelConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Build station lookup with all fuel types
                 if station_code not in self._station_lookup:
                     self._station_lookup[station_code] = {
-                        "station_code": station_code,
-                        "station_name": st.name,
-                        "au_state": st.au_state,
+                        CONF_STATION_CODE: station_code,
+                        CONF_STATION_NAME: st.name,
+                        CONF_STATION_ADDRESS: st.address,
+                        CONF_AU_STATE: st.au_state,
                         CONF_STATION_FUEL_TYPES: [],
                     }
-
                 if (
                     fuel
                     not in self._station_lookup[station_code][CONF_STATION_FUEL_TYPES]
@@ -1378,6 +1383,7 @@ def _create_nickname_with_stations(
             {
                 CONF_STATION_CODE: s[CONF_STATION_CODE],
                 CONF_STATION_NAME: s[CONF_STATION_NAME],
+                CONF_STATION_ADDRESS: s[CONF_STATION_ADDRESS],
                 CONF_AU_STATE: s[CONF_AU_STATE],
                 CONF_STATION_FUEL_TYPES: s[CONF_STATION_FUEL_TYPES],
             }
@@ -1420,8 +1426,9 @@ def _add_stations_to_nickname(
             existing_stations.append(
                 {
                     CONF_STATION_CODE: station[CONF_STATION_CODE],
-                    CONF_AU_STATE: station[CONF_AU_STATE],
                     CONF_STATION_NAME: station[CONF_STATION_NAME],
+                    CONF_STATION_ADDRESS: station[CONF_STATION_ADDRESS],
+                    CONF_AU_STATE: station[CONF_AU_STATE],
                     CONF_STATION_FUEL_TYPES: [],
                 }
             )

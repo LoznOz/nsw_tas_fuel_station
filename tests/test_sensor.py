@@ -232,6 +232,7 @@ async def test_cheapest_sensor_native_value_and_attributes(coordinator) -> None:
     assert attrs is not None
     assert "station_code" in attrs
     assert "station_name" in attrs
+    assert "station_address" in attrs
     assert "fuel_type" in attrs
     assert "price" in attrs
     assert attrs["rank"] == 1
