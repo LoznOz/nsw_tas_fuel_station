@@ -32,3 +32,24 @@ cards:
         name: Ampol Macquarie St
       - entity: sensor.hobart_coles_express_hobart_u91
         name: Coles City
+          - type: heading
+            heading: Example Markdown
+          - type: markdown
+            content: >-
+              Cheapest Diesel Great Western Highway
+
+              # <ha-icon icon="mdi:gas-station-in-use"></ha-icon> {{
+              states('sensor.great_western_highway_cheapest_great_western_highway_1')
+              }} {{
+              state_attr('sensor.great_western_highway_cheapest_great_western_highway_1',
+              'unit_of_measurement') }}
+
+              **{{
+              state_attr('sensor.great_western_highway_cheapest_great_western_highway_1',
+              'station_name') }}**
+
+              Checked {{
+              state_attr('sensor.great_western_highway_cheapest_great_western_highway_1',
+              'price_last_checked') }} • Changed {{
+              as_datetime(state_attr('sensor.great_western_highway_cheapest_great_western_highway_1',
+              'price_last_changed')).strftime('%d %b %H:%M') }}

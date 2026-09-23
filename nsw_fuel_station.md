@@ -48,13 +48,13 @@ Once you have validated your key and secret you will be prompted to select fuel 
 
 Select around 1–4 stations; more can be difficult to display neatly on a dashboard. Also be aware that the API has rate limits if you choose many stations.
 
-Sensors will be created for each station you select.  In NSW and the ACT the default search is for Ethanol E10 and Unleaded U91. In Tasmania by default search is for Unleaded U91.
+Sensors will be created for each station you select.  In NSW and the ACT the default search is for both Ethanol E10 and Unleaded U91. In Tasmania by default search is for Unleaded U91.
 
 Click Submit.
 
 ## Adding Sensors to Your Dashboard
 
-#### Selected Stations
+#### Selected (Favorite) Stations
 
 Configure your dashboard cards as normal, the sensors will have names like "BP Rosedale U91", starting with the brand name. As station names can be long, you may want to configure a short custom name in cards that support it.
 
@@ -81,37 +81,53 @@ The sensor card and glance card may also suit your dashboard, note that not all 
 
 ![example cards](./images/example_cards.png)
 
-## Reconfigure and manage existing configuration
+The Markup card can be useful if you want the price loud and proud on a mobile device.
 
-After initial setup, configuration changes are made from the integration entry's **Reconfigure** menu:
+![markup cards](./images/markup.jpg)
 
-**Settings -> Devices & services -> NSW Fuel Check -> three dots -> Reconfigure**
+View the [example card yaml](https://github.com/bicycleboy/nsw_tas_fuel_station/blob/main/example_cards.yaml)
 
-The menu provides five paths:
+# Advanced Configuration
 
-### Add new location
+You can create multiple locations/nicknames to support many scenarios like "Home", "Work", "Trip to Work", or "Home Unleaded", "Home Diesel".  Each location/nickname will create 2 cheapest sensors for the location and fuel type you select.
 
-Use **Add new location** to create another nickname/location and select its initial favorite stations. A nickname groups station sensors and the two cheapest-price sensors, for example "Home", "Work", or another location that is useful to you.
+## Add new location/nickname
 
-The location selector and search radius determine where FuelCheck searches. The selected fuel type determines the station list shown during configuration and the fuel searched by the cheapest sensors for that nickname/location.
+Use **Reconfigure** from the main integration page dropdown
 
-You can also enter exclusion text to omit matching station names from the cheapest-price results, for example a members-only station you do not use.
+**Settings -> Devices & services -> NSW Fuel Check -> top most three dots -> Reconfigure**
+
+Select **Add new location** from the menu to create another location/nickname and select its initial favorite stations. A nickname groups station sensors for ease of identification and creates two cheapest-price sensors.
+
+The location selector and search radius determine where FuelCheck searches. The selected fuel type determines the station list shown during configuration and the fuel searched by the cheapest sensors for that location/nickname.
+
+You may need to adjust the location and radius as described below to find your preferred stations and ensure they are included in the cheapest search.
+
+## Reconfigure existing location/nickname
+
+Configuration changes are made from the integration's main page **Reconfigure** menu:
+
+**Settings -> Devices & services -> NSW Fuel Check -> top most three dots -> Reconfigure**
+
+The menu provides five options:
+
+Add new location/nickname as described above.
 
 ### Add station to existing location
 
-Use **Add station to existing location** when you want to add another favorite station to a location that is already configured.
+Use **Add station to existing location/nickname** when you want to add another favorite station to a location/nickname that is already configured.
 
-First choose the existing location from the dropdown. Home Assistant device names are shown where available, so a renamed device such as "Petrol" can be selected without needing to know its original stored nickname.
+First choose the existing location/nickname from the dropdown.
 
-Then choose a search location/radius and fuel type to find the station. These search choices are temporary and are used only to find the station; they do not change the existing location's saved coordinates, radius, cheapest-fuel type or exclusion text.
+Then choose a search location/radius and fuel type to find the station. These search choices are used to find more stations; they do not change the existing location's saved coordinates, radius or cheapest-fuel type.
 
-### Edit existing location settings
+### Edit existing location/nickname settings
 
-Use **Edit existing location settings** when you want to change an existing nickname/location without having to add another station.
+Use **Edit existing location/nickname settings** when you want to change an existing location/nicknames settings.
 
 You can change:
 
-- saved location and search radius;
+- saved location and search radius for the cheapest sensors;
 - cheapest-fuel search type;
 - cheapest-station exclusion text.
 
@@ -119,27 +135,27 @@ The integration checks the proposed settings with FuelCheck before saving them. 
 
 Changing these settings does not add or remove favorite stations.
 
+Entering a value in the **Exclude station names containing** field is designed to exclude members only stations where you are not a member, such as Costco, from the cheapest sensors. It can also used to to exclude stations that are inconvenient.
+
 ### Manage configured stations
 
-Use **Manage configured stations** to select a nickname/location and then one of its configured stations.
+Use **Manage configured stations** to select a location/nickname and then one of its configured stations.
 
 For the selected station you can:
 
 - add a fuel type currently reported by FuelCheck for that station;
 - remove an individual configured fuel type by removing its selected chip;
-- remove the entire station from that nickname/location.
+- remove the entire station from that location/nickname.
 
-After a successful station change, the station list remains open so you can continue editing other stations in the same location.
+After a successful station change, the station list remains open so you can continue editing other stations for the same location/nickname.
 
-If you remove the final configured station from a nickname/location, Home Assistant asks for confirmation before also removing the now-empty location device and its cheapest-price entities.
+If you remove the final configured station from a location/nickname, Home Assistant asks for confirmation before also removing the now-empty location/nickname and its cheapest-price sensors.
 
 ### Delete location
 
-Use **Delete location** to remove an entire nickname/location, all of its configured favorite-station entities, and its cheapest-price entities. A confirmation screen is shown before deletion.
+Use **Delete location** to remove an entire location/nickname, all of its configured favorite-station sensors, and its cheapest-price sensors. A confirmation screen is shown before deletion.
 
-This also provides a cleanup path for an existing location that no longer contains any favorite stations.
-
-![advanced](./images/advanced.png)
+This also provides a cleanup path for an existing location/location that no longer contains any favorite stations.
 
 # Data updates
 
@@ -147,7 +163,7 @@ The **NSW Fuel Check** integration polls data from the API twice a day by defaul
 
 # Known limitations
 
-The integration currently only supports New South Wales, the ACT and Tasmania (Australia).
+The integration currently only supports New South Wales, Canberra/the ACT and Tasmania (Australia).
 
 Some fuel types such as EV can be selected but currently do not return any data.
 
@@ -219,7 +235,7 @@ Your stations list is missing stations you expected to see.
 
 #### Resolution
 
-This can be for a number of reasons. For example, you searched for U91 but the station does not stock U91. Use **Reconfigure** and try different fuel types and locations. Try using different locations and radius settings to get all the stations you want. If you are still not seeing what you want, see "I want to know the cheapest price close to my usual routes" below. You can also turn on debugging as described in [the readme](./README.md) and check the logs for errors and details of the parameters sent to NSW Fuel Check.
+This can be for a number of reasons. For example, you searched for U91 but the station does not stock U91. Use **Reconfigure** and try different fuel types and locations. Try using different locations and radius settings to get all the stations you want. In some locations you may need to move the centre of the radius close to the missing station (such as on the outskirts of town) and increase the radius to include most other local stations. If you are still not seeing what you want, see "I want to know the cheapest price close to my usual routes" below. You can also turn on debugging as described in [the readme](./README.md) and check the logs for errors and details of the parameters sent to NSW Fuel Check.
 
 ## How do I remove a station or fuel type I no longer want?
 
@@ -240,7 +256,7 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 #### Resolution (Advanced)
 
 1. This solution requires comfort with editing configuration.yaml.
-2. Use the **Reconfigure** option with a small, say 5 km, radius to create multiple nicknames along your route(s).  Select just 1 station.
+2. Use **Reconfigure** and **A**dd new location/nickname** to create multiple nicknames with a small, say 5 km, radius along your route(s).  Select just 1 station.
 3. Edit your configuration.yaml and create a template sensor similar to [this example](./example_template_sensor.yaml).  You will of course need to change the sensor names to match yours or get your favorite AI to do it for you.
 4. Restart HA.
 5. Add the template sensor to your dashboard.  You can find example cards like the below using the template sensor [here](./example_card_template_sensor.yaml).
@@ -252,11 +268,13 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 
 #### Description
 
-By default the cheapest sensors search for E10/U91.  Earlier releases only supported E10/U91 and required an upgrade in HACS. Previous workarounds were limited to a finite set of chosen stations, whereas you will now see the cheapest stations found by NSW Fuel Check.
+By default the cheapest sensors search for E10/U91.  Pre 2026 releases only supported E10/U91. Previous workarounds were limited to a finite set of chosen stations, whereas in later releases the cheapest stations found by NSW Fuel Check and might include unexpected stations.
 
 #### Resolution
 
-Use **Reconfigure -> Edit existing location settings** to change the cheapest-fuel search type for an existing location without adding another station. Choose Premium Unleaded 95/98, Diesel, or another supported fuel. The integration validates the new selection against FuelCheck before saving it.
+Use **Reconfigure -> Edit existing location/nickname settings** to change the cheapest-fuel search type for an existing location without adding another station. Choose Premium Unleaded 95/98, Diesel, or another supported fuel. The integration validates the new selection against FuelCheck before saving it.
+
+If you have multiple vehicles you can also use **Reconfigure -> Add new location/nickname** to track multiple fuels.
 
 Use **Reconfigure -> Manage configured stations** if you also want to add or remove fuel types for individual favorite stations.
 
