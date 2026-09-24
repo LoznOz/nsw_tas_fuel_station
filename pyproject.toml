@@ -12,7 +12,7 @@ authors = [
     { name = "Chris", email = "bicycleboy61@gmail.com" }
 ]
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
     "nsw-tas-fuel-api-client == 0.0.1"
 ]
@@ -55,7 +55,7 @@ markers = [
 addopts = "-v --tb=short --color=yes"
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = [

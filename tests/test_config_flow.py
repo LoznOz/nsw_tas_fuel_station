@@ -1528,3 +1528,123 @@ async def test_add_station_to_existing_nickname_uses_stored_nickname(
     assert home[CONF_RADIUS_KM] == 10
     assert home[CONF_CHEAPEST_FUEL_TYPE] == "U91"
     assert home[CONF_EXCLUDE_STRING] == "Members only"
+
+
+async def test_add_station_after_device_rename_then_other_nickname_without_restart(
+    hass: HomeAssistant,
+    mock_api_client: AsyncMock,
+) -> None:
+    """Renaming one device must not break later station adds to another nickname."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=CLIENT_ID,
+        data={
+            CONF_CLIENT_ID: CLIENT_ID,
+            CONF_CLIENT_SECRET: CLIENT_SECRET,
+            "nicknames": {
+                "Home": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "",
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_A,
+                            "station_name": "Station A",
+                            "station_address": "1 Test Street",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        },
+                    ],
+                },
+                "Work": {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                    },
+                    CONF_RADIUS_KM: 10,
+                    CONF_CHEAPEST_FUEL_TYPE: "U91",
+                    CONF_EXCLUDE_STRING: "",
+                    "stations": [
+                        {
+                            "station_code": STATION_NSW_B,
+                            "station_name": "Station B",
+                            "station_address": "2 Test Street",
+                            "au_state": "NSW",
+                            "fuel_types": ["U91"],
+                        },
+                    ],
+                },
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    device_registry = dr.async_get(hass)
+    home_device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Home")},
+        name="Home",
+    )
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, "location_Work")},
+        name="Work",
+    )
+    device_registry.async_update_device(home_device.id, name_by_user="Diesel")
+
+    async def _run_add(nickname: str, station_code: int) -> None:
+        with patch(NSW_FUEL_API_DEFINITION, return_value=mock_api_client):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={
+                    "source": config_entries.SOURCE_RECONFIGURE,
+                    "entry_id": entry.entry_id,
+                },
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {"next_step_id": "add_station_existing"}
+            )
+            assert result["step_id"] == "add_station_existing"
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_NICKNAME: nickname}
+            )
+            assert result["step_id"] == "add_station_search"
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {
+                    CONF_LOCATION: {
+                        CONF_LATITUDE: HOME_LAT,
+                        CONF_LONGITUDE: HOME_LNG,
+                        CONF_RADIUS_M: 10_000,
+                    },
+                    CONF_FUEL_TYPE: "U91",
+                },
+            )
+            assert result["step_id"] == "station_select"
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_SELECTED_STATIONS: [str(station_code)]},
+            )
+
+        assert result["type"] is FlowResultType.ABORT
+        assert result["reason"] == "stations_added"
+
+    await _run_add("Home", STATION_NSW_B)
+    await _run_add("Work", STATION_NSW_A)
+
+    assert set(entry.data["nicknames"]) == {"Home", "Work"}
+    assert {
+        station["station_code"]
+        for station in entry.data["nicknames"]["Home"]["stations"]
+    } == {STATION_NSW_A, STATION_NSW_B}
+    assert {
+        station["station_code"]
+        for station in entry.data["nicknames"]["Work"]["stations"]
+    } == {STATION_NSW_A, STATION_NSW_B}
