@@ -147,9 +147,12 @@ class CheapestFuelPriceSensor(CoordinatorEntity[NSWFuelCoordinator], SensorEntit
         self._index = rank - 1
         self._search_fuel_type = search_fuel_type
 
-        # Use nickname in unique id & name (therefore entity id) so user can distinguish
+        # Keep nickname in the stable unique ID, but use a device-relative entity name.
+        # Home Assistant combines the device and entity names for the generated entity ID,
+        # so repeating the nickname here produces duplicated IDs such as
+        # sensor.home_cheapest_home_1.
         self._attr_unique_id = f"{DOMAIN}_cheapest_{nickname}_{rank}"
-        self._attr_name = f"Cheapest {nickname} #{rank}"
+        self._attr_name = f"Cheapest #{rank}"
 
         self._au_state = au_state
         self._attr_attribution = _attribution_for_state(au_state)

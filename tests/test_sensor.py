@@ -238,6 +238,14 @@ async def test_cheapest_sensor_native_value_and_attributes(coordinator) -> None:
     assert attrs["rank"] == 1
 
 
+def test_cheapest_sensor_name_is_relative_and_unique_id_stays_stable() -> None:
+    """Cheapest sensor name does not repeat nickname; unique ID remains stable."""
+    sensor = CheapestFuelPriceSensor(None, "Great Western Highway", 1, "U91")
+
+    assert sensor.name == "Cheapest #1"
+    assert sensor.unique_id == f"{DOMAIN}_cheapest_Great Western Highway_1"
+
+
 def test_cheapest_sensor_icon() -> None:
     """Rank 1 uses highlighted icon."""
     sensor1 = CheapestFuelPriceSensor(None, "Home", 1, "U91")
