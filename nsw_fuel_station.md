@@ -30,7 +30,7 @@ Like weather integrations, the idea is not to replace the NSW Fuel Check App but
 3. Subscribe to the FuelCheck API and create an app to obtain your API Key and Secret. Sign-up is free. The site requires an email address but does not spam you and the address
 does not have to be your main email address. When prompted to create and name your app it can have any name.  Make a note of the API Key and API Secret.
 
-The process takes all of 5 minutes, while API keys can be off putting for some, it is a once and does process and popularity presumably helps the keep NSW Fuel Check funded.
+The process takes all of 5 minutes, while API keys can be off putting for some, it is a once and done process and popularity presumably helps the keep NSW Fuel Check funded.
 
 ![API Signup](./images/api_signup.png)
 
