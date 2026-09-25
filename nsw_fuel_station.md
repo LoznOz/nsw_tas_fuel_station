@@ -260,7 +260,7 @@ I want to know the cheapest price close to my usual routes, without cluttering m
 #### Resolution (Advanced)
 
 1. This solution requires comfort with editing configuration.yaml.
-2. Use **Reconfigure** and **A**dd new location/nickname** to create multiple nicknames with a small, say 5 km, radius along your route(s).  Select just 1 station.
+2. Use **Reconfigure** and **Add new location/nickname** to create multiple nicknames with a small, say 5 km, radius along your route(s).  You might think ofbthis as creating a long thin search area. Select just 1 station for each location. 
 3. Edit your configuration.yaml and create a template sensor similar to [this example](./example_template_sensor.yaml).  You will of course need to change the sensor names to match yours or get your favorite AI to do it for you.
 4. Restart HA.
 5. Add the template sensor to your dashboard.  You can find example cards like the below using the template sensor [here](./example_card_template_sensor.yaml).
