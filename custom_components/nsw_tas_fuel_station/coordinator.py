@@ -109,6 +109,7 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
             "cheapest_nearby": 0,
         }
         self._last_refresh_api_operations = refresh_operations
+        http_before = self._http_request_snapshot()
 
         try:
             favorites = await self._update_favorite_stations(refresh_operations)
@@ -130,13 +131,35 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
             raise UpdateFailed(msg) from err
 
         refresh_total = sum(refresh_operations.values())
-        _LOGGER.debug(
-            "NSW Fuel API refresh completed: favorites=%d cheapest=%d total_api_operations=%d session_total=%d",
-            refresh_operations["favorite_station"],
-            refresh_operations["cheapest_nearby"],
-            refresh_total,
-            self._api_operations_total,
-        )
+        http_after = self._http_request_snapshot()
+        http_delta = self._http_request_delta(http_before, http_after)
+
+        if http_delta is not None and http_after is not None:
+            _LOGGER.debug(
+                "NSW Fuel API refresh completed: favorites=%d cheapest=%d "
+                "total_api_operations=%d session_total=%d; "
+                "http_requests oauth=%d data=%d retries=%d total=%d "
+                "session_http_total=%d token_expires_in=%s",
+                refresh_operations["favorite_station"],
+                refresh_operations["cheapest_nearby"],
+                refresh_total,
+                self._api_operations_total,
+                http_delta["oauth"],
+                http_delta["data"],
+                http_delta["retries"],
+                http_delta["oauth"] + http_delta["data"],
+                http_after["oauth"] + http_after["data"],
+                getattr(self.api, "last_token_expires_in", None),
+            )
+        else:
+            _LOGGER.debug(
+                "NSW Fuel API refresh completed: favorites=%d cheapest=%d "
+                "total_api_operations=%d session_total=%d",
+                refresh_operations["favorite_station"],
+                refresh_operations["cheapest_nearby"],
+                refresh_total,
+                self._api_operations_total,
+            )
 
         return {
             "favorites": favorites,
@@ -264,6 +287,28 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
             cheapest[nickname] = combined[:CHEAPEST_RESULTS_LIMIT]
 
         return cheapest
+
+    def _http_request_snapshot(self) -> dict[str, int] | None:
+        """Return client HTTP counters when supported by the installed client."""
+        counts = getattr(self.api, "http_request_counts", None)
+        if not isinstance(counts, dict):
+            return None
+
+        required = ("oauth", "data", "retries")
+        if not all(isinstance(counts.get(key), int) for key in required):
+            return None
+
+        return {key: counts[key] for key in required}
+
+    @staticmethod
+    def _http_request_delta(
+        before: dict[str, int] | None,
+        after: dict[str, int] | None,
+    ) -> dict[str, int] | None:
+        """Return per-refresh HTTP request deltas when client counters are available."""
+        if before is None or after is None:
+            return None
+        return {key: after[key] - before[key] for key in before}
 
     @property
     def last_refresh_api_operations(self) -> dict[str, int]:
