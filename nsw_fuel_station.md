@@ -204,7 +204,7 @@ Normally by default the NSW Fuel Check API is called every 12 hours.  Some users
 
 #### Resolution
 
-Asking Home Assistant to update *any one* sensor will cause *all* favorite station sensors and the *all* cheapest sensors to update.  A time based sensor example is below.
+Asking Home Assistant to update *any one* sensor will cause *all* favorite station sensors and *all* the cheapest sensors for **all** locations/nicknames to update.  A time based sensor example is below.
 
 ```
 alias: Update Fuel Prices
