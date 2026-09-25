@@ -254,7 +254,8 @@ To remove a whole location directly, use **Reconfigure -> Delete location**.
 
 #### Description
 
-I want to know the cheapest price close to my usual routes, without cluttering my dashboard with many cards.
+I want to summarise prices from multiple lications. 
+I want to know the cheapest price close to my usual routes, without cluttering my dashboard with many cards. 
 
 #### Resolution (Advanced)
 
