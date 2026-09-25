@@ -270,3 +270,55 @@ def test_nicknames_property(coordinator: NSWFuelCoordinator) -> None:
     names = coordinator.nicknames
 
     assert names == ["Home"]
+
+
+async def test_refresh_accounts_for_api_operations(
+    coordinator: NSWFuelCoordinator, mock_api_client
+) -> None:
+    """A refresh accounts for favorite and cheapest API operations."""
+    await coordinator._async_update_data()
+
+    assert coordinator.last_refresh_api_operations == {
+        "favorite_station": 1,
+        "cheapest_nearby": 1,
+    }
+    assert coordinator.api_operations_total == 2
+    assert mock_api_client.get_fuel_prices_for_station.await_count == 1
+    assert mock_api_client.get_fuel_prices_within_radius.await_count == 1
+
+
+async def test_duplicate_favorite_station_is_fetched_once_per_refresh(
+    hass: HomeAssistant, mock_api_client
+) -> None:
+    """A favorite shared by nicknames is fetched once while Cheapest stays per nickname."""
+    shared_station = {
+        "station_code": STATION_NSW_A,
+        "au_state": "NSW",
+        "fuel_types": ["U91"],
+    }
+    nicknames = {
+        "Home": {
+            "location": {"latitude": HOME_LAT, "longitude": HOME_LNG},
+            "stations": [shared_station],
+        },
+        "Work": {
+            "location": {"latitude": HOME_LAT, "longitude": HOME_LNG},
+            "stations": [shared_station],
+        },
+    }
+    coordinator = NSWFuelCoordinator(
+        hass=hass,
+        api=mock_api_client,
+        nicknames=nicknames,
+        scan_interval=timedelta(minutes=5),
+    )
+
+    await coordinator._async_update_data()
+
+    assert coordinator.last_refresh_api_operations == {
+        "favorite_station": 1,
+        "cheapest_nearby": 2,
+    }
+    assert coordinator.api_operations_total == 3
+    assert mock_api_client.get_fuel_prices_for_station.await_count == 1
+    assert mock_api_client.get_fuel_prices_within_radius.await_count == 2
