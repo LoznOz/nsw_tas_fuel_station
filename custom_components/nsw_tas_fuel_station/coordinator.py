@@ -130,7 +130,6 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
             raise UpdateFailed(msg) from err
 
         refresh_total = sum(refresh_operations.values())
-        self._api_operations_total += refresh_total
         _LOGGER.debug(
             "NSW Fuel API refresh completed: favorites=%d cheapest=%d total_api_operations=%d session_total=%d",
             refresh_operations["favorite_station"],
@@ -166,6 +165,7 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
         for station_code, au_state in self._station_keys:
             if operations is not None:
                 operations["favorite_station"] += 1
+                self._api_operations_total += 1
             prices: list[Price] = await self.api.get_fuel_prices_for_station(
                 str(station_code),
                 au_state,
@@ -213,6 +213,7 @@ class NSWFuelCoordinator(DataUpdateCoordinator[CoordinatorData]):
 
             if operations is not None:
                 operations["cheapest_nearby"] += 1
+                self._api_operations_total += 1
             nearby = await self.api.get_fuel_prices_within_radius(
                 latitude=lat,
                 longitude=lon,
