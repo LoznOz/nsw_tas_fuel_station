@@ -1,5 +1,8 @@
 """Tests for NSW Fuel Check diagnostics."""
 
+from datetime import timedelta
+
+import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.nsw_tas_fuel_station.const import DOMAIN
@@ -7,6 +10,21 @@ from custom_components.nsw_tas_fuel_station.coordinator import NSWFuelCoordinato
 from custom_components.nsw_tas_fuel_station.diagnostics import (
     async_get_config_entry_diagnostics,
 )
+
+
+@pytest.fixture
+def coordinator(
+    hass: HomeAssistant,
+    mock_api_client,
+    mock_config_entry,
+) -> NSWFuelCoordinator:
+    """Return a coordinator using the standard mocked API client."""
+    return NSWFuelCoordinator(
+        hass,
+        mock_api_client,
+        mock_config_entry.data["nicknames"],
+        timedelta(minutes=30),
+    )
 
 
 async def test_diagnostics_with_client_http_accounting(
