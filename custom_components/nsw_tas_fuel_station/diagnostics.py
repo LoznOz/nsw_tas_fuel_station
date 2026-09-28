@@ -25,7 +25,9 @@ async def async_get_config_entry_diagnostics(
         "api_request_accounting": {
             "last_refresh_api_operations": coordinator.last_refresh_api_operations,
             "session_api_operations_total": coordinator.api_operations_total,
-            "http_request_counts": dict(http_counts) if http_counts is not None else None,
+            "http_request_counts": dict(http_counts)
+            if http_counts is not None
+            else None,
             "session_http_requests_total": (
                 http_counts.get("oauth", 0) + http_counts.get("data", 0)
                 if http_counts is not None
